@@ -31,7 +31,9 @@ const state = {
   input: null,
   widgets: null,
   paymentReady: false,
-  mode: 'preview'
+  mode: 'preview',
+  imageToken: null,
+  currentFortune: null
 };
 
 const previewLoadingSteps = [
@@ -45,29 +47,31 @@ const previewLoadingSteps = [
 const fullLoadingSteps = [
   '결제 확인 완료. 전체 사주를 다시 펼치는 중...',
   '미래 인연의 성향을 좁혀보는 중...',
+  '사주에서 잡힌 인상을 바탕으로 배우자 모습을 그리는 중...',
   '첫 만남과 감정의 흐름을 읽는 중...',
   '갈등·재회·결혼 흐름을 살펴보는 중...',
   '앞으로 5년과 12개월 운을 정리하는 중...',
   '마지막 점사를 다듬는 중...'
 ];
 
-const sampleText = `## 맛보기 — 첫눈에 잡히는 연애 팔자
-음… 이 사주는 사람을 빨리 고르는 것 같아도 실제 마음은 꽤 늦게 여는 쪽이야. 첫인상보다 몇 번 더 만나면서 말투와 태도가 일관적인지를 보는 흐름이 강해. 그런데 마음 안으로 한번 들인 뒤에는 오히려 네 쪽이 관계의 온도 변화를 더 빨리 알아차리는 편이야. 겉으로는 괜찮은 척해도 연락의 빈도나 말투가 달라지면 혼자 한 번 더 생각해보는 타입으로 읽혀.
+const sampleFortune = {
+  opening: {
+    title: '맛보기 — 첫눈에 잡히는 연애 팔자',
+    body: '음… 네 사주에서 연애 쪽을 보면 사람을 좋아하는 속도보다 마음을 허락하는 속도가 더 느려. 겉으로는 대수롭지 않은 척해도, 진짜 마음 안으로 들이는 건 별개야. 몇 번 더 보고 말과 행동이 같은 사람인지 은근히 오래 보는 쪽이지. 그런데 한번 안으로 들어오면 그때부터는 네가 더 예민해져.',
+    wide: true
+  },
+  sections: [
+    { title: '맛보기 — 이성이 보는 매력', body: '처음엔 속을 잘 안 보여주는 사람처럼 보이기 쉬워. 그런데 두세 번 말을 섞으면 장난기와 챙겨주는 면이 같이 튀어나와. 처음 봤을 때와 친해진 뒤의 온도 차이가 오히려 사람을 붙잡는 쪽이야.', wide: false },
+    { title: '맛보기 — 미래 인연 한 조각', body: '상대를 하나로 좁혀보면 처음부터 화려하게 시선을 끄는 사람보다, 단정하고 차분한데 가까워질수록 표정이 풀리는 사람이 더 진하게 잡혀. 완전히 낯선 자리에서 번쩍 만나는 것보다 같은 동선이 몇 번 겹치며 익숙해지는 그림이 더 자연스럽고.', wide: false },
+    { title: '결제 후 열리는 내용', body: '미래 연인의 상세한 모습과 성격, 직업 성향, 만남 경로, 첫 만남, 고백, 갈등, 재회, 결혼, 앞으로의 연애 흐름까지 이어서 본다.', wide: true }
+  ],
+  spouseVisual: {
+    description: '단정하고 차분한 인상, 가까워질수록 웃는 표정이 부드러워지는 사람.',
+    genderPresentation: '중성적이고 자연스러운 분위기', ageRange: '성인', face: '부드럽고 단정한 얼굴 인상', eyes: '차분한 눈매', hair: '자연스러운 헤어', build: '균형 잡힌 체형', fashion: '깔끔하고 절제된 옷차림', expression: '편안한 미소', atmosphere: '조용하고 따뜻한 분위기', caption: '사주에서 묘사된 분위기를 바탕으로 만든 상징 이미지입니다.'
+  },
+  closing: { title: '맛보기 한마디', body: '처음부터 확 끌리는 사람보다 두 번째, 세 번째 볼 때 마음에 남는 사람을 잘 봐. 네 인연은 그런 식으로 슬쩍 들어오는 쪽이 더 진해.', wide: true }
+};
 
-## 맛보기 — 이성이 보는 매력
-처음에는 속을 쉽게 보여주지 않는 사람처럼 보이기 쉬워. 그런데 친해지고 나면 생각보다 장난기와 챙겨주는 면이 같이 나오면서 이미지가 크게 바뀌는 편이야. 이 ‘처음과 친해진 뒤의 차이’가 상대 입장에서는 오래 기억되는 매력이 되기 쉽다.
-
-## 맛보기 — 미래 인연 한 조각
-미래 인연은 아주 화려하게 존재감을 드러내는 사람보다 첫인상은 단정하고 차분한데 가까워질수록 표현이 늘어나는 타입이 더 자연스럽게 잡혀. 나이차도 크게 벌어지기보다 동갑이나 근소한 차이가 유력한 흐름이야. 만남 역시 완전한 낯선 소개팅보다 지인 연결이나 반복되는 일상 동선에서 익숙해지면서 시작되는 쪽이 조금 더 강해.
-
-## 결제 후 열리는 내용
-🔒 미래 연인의 상세 외모·성격·직업 성향
-🔒 만남 경로 TOP 3와 첫 만남 시나리오
-🔒 누가 먼저 빠지는지·고백·연애 후 감정 변화
-🔒 갈등·이별·재회·장거리·외국인 인연
-🔒 결혼 상대·결혼 후 모습
-🔒 앞으로 5년 및 12개월 연애 흐름
-🔒 인생의 중요한 연애 시기와 최종 점사 카드`;
 
 init();
 
@@ -126,14 +130,17 @@ form.addEventListener('submit', async (event) => {
 
     state.analysisId = data.analysisId;
     state.analysisToken = data.analysisToken;
-    persistAnalysis(state.analysisId, data.analysisToken, payload, data.text);
+    persistAnalysis(state.analysisId, data.analysisToken, payload, data.fortune);
+    state.imageToken = data.imageToken || null;
+    if (state.imageToken) localStorage.setItem(storageKey(state.analysisId, 'imageToken'), state.imageToken);
     renderManse(data.manse);
     if (data.fullAccess || state.config?.freeTestMode) {
-      localStorage.setItem(storageKey(state.analysisId, 'full'), data.text);
-      renderResult(data.text, 'full');
+      localStorage.setItem(storageKey(state.analysisId, 'full'), JSON.stringify(data.fortune));
+      renderResult(data.fortune, 'full', data.imageToken ? { enabled: true, loading: true } : null);
       paywallSection.classList.add('hidden');
+      if (data.imageToken) loadSpouseImage(data.imageToken, data.fortune?.spouseVisual);
     } else {
-      renderResult(data.text, 'preview');
+      renderResult(data.fortune, 'preview', null);
       await preparePaywall();
     }
   } catch (error) {
@@ -154,7 +161,7 @@ for (const id of ['sampleTopBtn', 'sampleHeroBtn']) {
       voidBranches: ['오', '미'],
       luckPillars: { startAge: 7, forward: true }
     });
-    renderResult(sampleText, 'sample');
+    renderResult(sampleFortune, 'sample', null);
     paywallSection.classList.remove('hidden');
     paymentArea.classList.add('hidden');
     demoUnlockBtn.classList.add('hidden');
@@ -264,6 +271,8 @@ async function restorePaidAnalysis() {
   const analysisToken = localStorage.getItem(storageKey(analysisId, 'analysis'));
   const unlockToken = localStorage.getItem(storageKey(analysisId, 'unlock'));
   const preview = localStorage.getItem(storageKey(analysisId, 'preview'));
+  const imageToken = localStorage.getItem(storageKey(analysisId, 'imageToken'));
+  state.imageToken = imageToken;
 
   if (!inputRaw) return;
   state.analysisId = analysisId;
@@ -272,7 +281,7 @@ async function restorePaidAnalysis() {
 
   if (!unlockToken) {
     if (preview) {
-      renderResult(preview, 'preview');
+      renderResult(parseStoredFortune(preview), 'preview', null);
       await preparePaywall();
     }
     return;
@@ -280,7 +289,10 @@ async function restorePaidAnalysis() {
 
   const cachedFull = localStorage.getItem(storageKey(analysisId, 'full'));
   if (cachedFull) {
-    renderResult(cachedFull, 'full');
+    const cachedFortune = parseStoredFortune(cachedFull);
+    const cachedImage = getCachedSpouseImage(analysisId);
+    renderResult(cachedFortune, 'full', cachedImage || (imageToken ? { enabled: true, loading: true } : null));
+    if (!cachedImage && imageToken) loadSpouseImage(imageToken, cachedFortune?.spouseVisual);
     return;
   }
   await loadFullFortune(unlockToken);
@@ -296,9 +308,12 @@ async function loadFullFortune(unlockToken) {
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || '전체 풀이 생성에 실패했습니다.');
-    localStorage.setItem(storageKey(state.analysisId, 'full'), data.text);
+    localStorage.setItem(storageKey(state.analysisId, 'full'), JSON.stringify(data.fortune));
+    state.imageToken = data.imageToken || null;
+    if (state.imageToken) localStorage.setItem(storageKey(state.analysisId, 'imageToken'), state.imageToken);
     renderManse(data.manse);
-    renderResult(data.text, 'full');
+    renderResult(data.fortune, 'full', data.imageToken ? { enabled: true, loading: true } : null);
+    if (data.imageToken) loadSpouseImage(data.imageToken, data.fortune?.spouseVisual);
     const url = new URL(window.location.href);
     url.searchParams.set('analysisId', state.analysisId);
     url.searchParams.delete('paid');
@@ -310,10 +325,29 @@ async function loadFullFortune(unlockToken) {
   }
 }
 
-function persistAnalysis(analysisId, analysisToken, input, previewText) {
+function persistAnalysis(analysisId, analysisToken, input, previewFortune) {
   localStorage.setItem(storageKey(analysisId, 'analysis'), analysisToken);
   localStorage.setItem(storageKey(analysisId, 'input'), JSON.stringify(input));
-  localStorage.setItem(storageKey(analysisId, 'preview'), previewText);
+  localStorage.setItem(storageKey(analysisId, 'preview'), JSON.stringify(previewFortune));
+}
+
+function parseStoredFortune(raw) {
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return raw; }
+}
+
+function cacheSpouseImage(analysisId, spouseImage) {
+  if (!analysisId || !spouseImage?.dataUrl) return;
+  try {
+    if (spouseImage.dataUrl.length < 3500000) localStorage.setItem(storageKey(analysisId, 'spouseImage'), spouseImage.dataUrl);
+  } catch {}
+}
+
+function getCachedSpouseImage(analysisId) {
+  try {
+    const dataUrl = localStorage.getItem(storageKey(analysisId, 'spouseImage'));
+    return dataUrl ? { enabled: true, dataUrl, error: null } : null;
+  } catch { return null; }
 }
 
 function storageKey(analysisId, type) {
@@ -342,7 +376,7 @@ function setLoading(active, steps = previewLoadingSteps, title = '인연의 흐�
   loadingPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-function parseSections(text) {
+function legacySections(text) {
   const normalized = String(text || '').replace(/\r/g, '').trim();
   const lines = normalized.split('\n');
   const sections = [];
@@ -350,53 +384,149 @@ function parseSections(text) {
   for (const line of lines) {
     const match = line.match(/^##\s+(.+)$/);
     if (match) {
-      if (current.body.join('\n').trim()) sections.push({ title: current.title, body: current.body.join('\n').trim() });
+      if (current.body.join('\n').trim()) sections.push({ title: current.title, body: current.body.join('\n').trim(), wide: false });
       current = { title: match[1].trim(), body: [] };
     } else current.body.push(line);
   }
-  if (current.body.join('\n').trim()) sections.push({ title: current.title, body: current.body.join('\n').trim() });
+  if (current.body.join('\n').trim()) sections.push({ title: current.title, body: current.body.join('\n').trim(), wide: false });
   return sections;
 }
 
+function normalizeFortune(value) {
+  if (value && typeof value === 'object' && value.opening && Array.isArray(value.sections)) return value;
+  const legacy = legacySections(value);
+  return {
+    opening: legacy.shift() || { title: '첫 점사', body: String(value || ''), wide: true },
+    sections: legacy,
+    spouseVisual: null,
+    closing: null
+  };
+}
+
+function cleanResultText(raw) {
+  return String(raw || '')
+    .replace(/\*\*\*+/g, '')
+    .replace(/\*\*/g, '')
+    .replace(/^#{1,6}\s*/gm, '')
+    .replace(/`{1,3}/g, '')
+    .replace(/^[-_*]{3,}\s*$/gm, '')
+    .trim();
+}
+
 function formatBody(raw) {
-  return escapeHtml(raw)
+  return escapeHtml(cleanResultText(raw))
     .replace(/(★{1,5}☆{0,5})/g, '<span class="stars">$1</span>')
-    .replace(/^([①②③④⑤]|\d+[.)]|❤️|💭|🔥|📱|🔮|🌸|💘|✨|🔁|🌍|💍|🔒)\s*([^:\n]{0,38}:?)/gm, '<strong>$1 $2</strong>')
     .replace(/\n/g, '<br>');
 }
 
-function renderResult(text, mode) {
+function createResultCard(section) {
+  const card = document.createElement('article');
+  const autoWide = /앞으로 12개월|앞으로 5년|최종 점사 카드|마지막 점사|누가 먼저 빠지는가|결제 후/.test(section.title || '');
+  card.className = `result-card${section.wide || autoWide ? ' wide' : ''}${/결제 후/.test(section.title || '') ? ' locked-preview-card' : ''}`;
+  card.innerHTML = `<h3>${escapeHtml(section.title || '점사')}</h3><p>${formatBody(section.body || '')}</p>`;
+  return card;
+}
+
+function createSpouseVisualCard(spouseVisual, spouseImage) {
+  if (!spouseVisual) return null;
+  const card = document.createElement('article');
+  card.className = 'result-card wide spouse-visual-card';
+  card.id = 'spouseVisualCard';
+  const caption = spouseVisual.caption || '사주에서 묘사된 분위기를 바탕으로 만든 상징 이미지입니다. 실제 미래 배우자의 얼굴을 예측한 사진은 아닙니다.';
+  let visual = '';
+  if (spouseImage?.dataUrl) {
+    visual = `<div class="spouse-image-wrap" id="spouseVisualMedia"><img src="${spouseImage.dataUrl}" alt="사주에서 묘사된 미래 인연의 분위기를 시각화한 생성 이미지"></div>`;
+  } else if (spouseImage?.loading) {
+    visual = `<div class="spouse-image-placeholder generating" id="spouseVisualMedia"><span>緣</span><p>잠깐만.<br>지금 사주에서 잡힌 인상을 한 장의 모습으로 그리고 있어.</p></div>`;
+  } else if (spouseImage?.enabled) {
+    visual = `<div class="spouse-image-placeholder" id="spouseVisualMedia"><span>緣</span><p>배우자 이미지 생성은 잠시 뒤 다시 시도해줘.<br>글 점사는 정상적으로 완성됐어.</p></div>`;
+    if (spouseImage?.error) console.warn('[spouse image]', spouseImage.error);
+  } else {
+    visual = `<div class="spouse-image-placeholder"><span>緣</span><p>배우자 이미지 기능이 꺼져 있어.</p></div>`;
+  }
+  card.innerHTML = `
+    <div class="spouse-visual-copy">
+      <span class="spouse-kicker">사주가 그린 인연의 인상</span>
+      <h3>미래 배우자 분위기 이미지</h3>
+      <p>${formatBody(spouseVisual.description || '')}</p>
+      <div class="spouse-tags">
+        ${['ageRange','face','eyes','hair','fashion','atmosphere'].map((key) => spouseVisual[key] ? `<span>${escapeHtml(spouseVisual[key])}</span>` : '').join('')}
+      </div>
+      <small>${escapeHtml(caption)}</small>
+    </div>
+    ${visual}`;
+  return card;
+}
+
+function renderResult(result, mode, spouseImage = null) {
   state.mode = mode;
-  const sections = parseSections(text);
+  const fortune = normalizeFortune(result);
+  state.currentFortune = fortune;
   resultGrid.innerHTML = '';
   resultHighlight.innerHTML = '';
 
   if (mode === 'full') {
-    resultEyebrow.textContent = 'FULL LOVE SAJU · UNLOCKED';
-    resultTitle.textContent = '당신의 전체 인연을 읽었습니다';
+    resultEyebrow.textContent = '연월당 · 전체 점사';
+    resultTitle.textContent = '사주를 끝까지 펼쳐봤어';
     paywallSection.classList.add('hidden');
   } else {
-    resultEyebrow.textContent = mode === 'sample' ? 'SAMPLE PREVIEW' : 'FREE PREVIEW';
-    resultTitle.textContent = '당신의 인연, 먼저 조금만 보여드릴게요';
+    resultEyebrow.textContent = mode === 'sample' ? '연월당 · 예시 점사' : '연월당 · 맛보기';
+    resultTitle.textContent = '인연 쪽부터 먼저 조금 볼게';
   }
 
-  if (!sections.length) {
-    resultHighlight.innerHTML = `<h3>연애 점사</h3><p>${formatBody(text)}</p>`;
-  } else {
-    const first = sections.shift();
-    resultHighlight.innerHTML = `<h3>${escapeHtml(first.title)}</h3><p>${formatBody(first.body)}</p>`;
-    sections.forEach((section) => {
-      const card = document.createElement('article');
-      const wide = /앞으로 12개월|앞으로 5년|최종 점사 카드|마지막 점사|누가 먼저 빠지는가|결제 후/.test(section.title);
-      card.className = `result-card${wide ? ' wide' : ''}${/결제 후/.test(section.title) ? ' locked-preview-card' : ''}`;
-      card.innerHTML = `<h3>${escapeHtml(section.title)}</h3><p>${formatBody(section.body)}</p>`;
-      resultGrid.appendChild(card);
-    });
+  const first = fortune.opening || { title: '첫 점사', body: '' };
+  resultHighlight.innerHTML = `<h3>${escapeHtml(first.title)}</h3><p>${formatBody(first.body)}</p>`;
+
+  const sections = Array.isArray(fortune.sections) ? fortune.sections : [];
+  for (const section of sections) {
+    resultGrid.appendChild(createResultCard(section));
+    if (mode === 'full' && section.title === '미래 연인의 모습') {
+      const spouseCard = createSpouseVisualCard(fortune.spouseVisual, spouseImage);
+      if (spouseCard) resultGrid.appendChild(spouseCard);
+    }
   }
+  if (fortune.closing?.body) resultGrid.appendChild(createResultCard({ ...fortune.closing, wide: true }));
 
   loadingPanel.classList.add('hidden');
   resultsSection.classList.remove('hidden');
   resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function loadSpouseImage(imageToken, spouseVisual) {
+  if (!imageToken || !state.analysisId || !state.input || !spouseVisual) return;
+  try {
+    const response = await fetch('/api/spouse-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        analysisId: state.analysisId,
+        analysisToken: state.analysisToken,
+        imageToken,
+        input: state.input,
+        spouseVisual
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || '배우자 이미지 생성에 실패했습니다.');
+    const image = data.spouseImage;
+    cacheSpouseImage(state.analysisId, image);
+    updateSpouseImage(image);
+  } catch (error) {
+    updateSpouseImage({ enabled: true, dataUrl: null, error: error.message });
+  }
+}
+
+function updateSpouseImage(spouseImage) {
+  const media = document.getElementById('spouseVisualMedia');
+  if (!media) return;
+  if (spouseImage?.dataUrl) {
+    media.className = 'spouse-image-wrap';
+    media.innerHTML = `<img src="${spouseImage.dataUrl}" alt="사주에서 묘사된 미래 인연의 분위기를 시각화한 생성 이미지">`;
+  } else {
+    media.className = 'spouse-image-placeholder';
+    media.innerHTML = '<span>緣</span><p>이미지는 이번에 만들지 못했어.<br>글 점사는 그대로 보면 돼.</p>';
+    if (spouseImage?.error) console.warn('[spouse image]', spouseImage.error);
+  }
 }
 
 function renderManse(manse) {
