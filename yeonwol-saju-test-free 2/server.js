@@ -752,6 +752,8 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === 'POST' && req.url === '/api/preview') {
+    const previewStartedAt = Date.now();
+    console.log('[preview] request received');
     const ip = getIp(req);
     if (!rateAllowed(ip, 1)) {
       return sendJson(res, 429, { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' });
@@ -772,6 +774,7 @@ const server = http.createServer(async (req, res) => {
       );
       const analysisId = randomId(10);
       const imageToken = isFreeFull ? createSpouseImageToken(analysisId, body, fortune.spouseVisual) : null;
+      console.log(`[preview] success in ${Date.now() - previewStartedAt}ms`);
       return sendJson(res, 200, {
         analysisId,
         analysisToken: createAnalysisToken(analysisId, body),
@@ -781,7 +784,7 @@ const server = http.createServer(async (req, res) => {
         fullAccess: isFreeFull
       });
     } catch (error) {
-      console.error('[preview error]', error.message);
+      console.error(`[preview error after ${Date.now() - previewStartedAt}ms]`, error.message);
       return sendJson(res, 500, { error: error.message || '맛보기 분석 중 오류가 발생했습니다.' });
     }
   }
