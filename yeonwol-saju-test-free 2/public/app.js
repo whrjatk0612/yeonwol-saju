@@ -1,4 +1,33 @@
- config: null,
+console.info('[YEONWOL] app.js v4.1.1 loaded');
+window.addEventListener('error', (e) => console.error('[YEONWOL client error]', e.error || e.message));
+const form = document.getElementById('sajuForm');
+const loadingPanel = document.getElementById('loadingPanel');
+const loadingTitle = document.getElementById('loadingTitle');
+const loadingText = document.getElementById('loadingText');
+const progressBar = document.getElementById('progressBar');
+const resultsSection = document.getElementById('resultsSection');
+const resultGrid = document.getElementById('resultGrid');
+const resultHighlight = document.getElementById('resultHighlight');
+const resultEyebrow = document.getElementById('resultEyebrow');
+const resultTitle = document.getElementById('resultTitle');
+const submitBtn = document.getElementById('submitBtn');
+const submitLabel = submitBtn.querySelector('.btn-label');
+const birthTime = document.getElementById('birthTime');
+const birthTimeUnknown = document.getElementById('birthTimeUnknown');
+const leapMonthWrap = document.getElementById('leapMonthWrap');
+const isLeapMonth = document.getElementById('isLeapMonth');
+const paywallSection = document.getElementById('paywallSection');
+const paymentArea = document.getElementById('paymentArea');
+const paymentMessage = document.getElementById('paymentMessage');
+const payBtn = document.getElementById('payBtn');
+const demoUnlockBtn = document.getElementById('demoUnlockBtn');
+const priceText = document.getElementById('priceText');
+const manseCard = document.getElementById('manseCard');
+const mansePillars = document.getElementById('mansePillars');
+const manseMeta = document.getElementById('manseMeta');
+
+const state = {
+  config: null,
   analysisId: null,
   analysisToken: null,
   input: null,
@@ -74,8 +103,9 @@ function updateCalendarUI() {
   if (type !== '음력') isLeapMonth.checked = false;
 }
 
-form.addEventListener('submit', async (event) => {
-  event.preventDefault();
+async function runFortune(event) {
+  if (event) event.preventDefault();
+  if (!form.reportValidity()) return;
   if (!birthTimeUnknown.checked && !birthTime.value) {
     birthTime.focus();
     alert('출생시간을 입력하거나 “태어난 시간을 몰라요”를 체크해주세요.');
@@ -120,7 +150,10 @@ form.addEventListener('submit', async (event) => {
   } finally {
     setLoading(false);
   }
-});
+}
+
+form.addEventListener('submit', runFortune);
+submitBtn.addEventListener('click', runFortune);
 
 for (const id of ['sampleTopBtn', 'sampleHeroBtn']) {
   document.getElementById(id).addEventListener('click', () => {
