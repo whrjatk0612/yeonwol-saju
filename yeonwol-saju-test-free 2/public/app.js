@@ -1,31 +1,4 @@
-const form = document.getElementById('sajuForm');
-const loadingPanel = document.getElementById('loadingPanel');
-const loadingTitle = document.getElementById('loadingTitle');
-const loadingText = document.getElementById('loadingText');
-const progressBar = document.getElementById('progressBar');
-const resultsSection = document.getElementById('resultsSection');
-const resultGrid = document.getElementById('resultGrid');
-const resultHighlight = document.getElementById('resultHighlight');
-const resultEyebrow = document.getElementById('resultEyebrow');
-const resultTitle = document.getElementById('resultTitle');
-const submitBtn = document.getElementById('submitBtn');
-const submitLabel = submitBtn.querySelector('.btn-label');
-const birthTime = document.getElementById('birthTime');
-const birthTimeUnknown = document.getElementById('birthTimeUnknown');
-const leapMonthWrap = document.getElementById('leapMonthWrap');
-const isLeapMonth = document.getElementById('isLeapMonth');
-const paywallSection = document.getElementById('paywallSection');
-const paymentArea = document.getElementById('paymentArea');
-const paymentMessage = document.getElementById('paymentMessage');
-const payBtn = document.getElementById('payBtn');
-const demoUnlockBtn = document.getElementById('demoUnlockBtn');
-const priceText = document.getElementById('priceText');
-const manseCard = document.getElementById('manseCard');
-const mansePillars = document.getElementById('mansePillars');
-const manseMeta = document.getElementById('manseMeta');
-
-const state = {
-  config: null,
+ config: null,
   analysisId: null,
   analysisToken: null,
   input: null,
@@ -40,36 +13,35 @@ const previewLoadingSteps = [
   '만세력 원국을 계산하는 중...',
   '연주·월주·일주·시주를 살펴보는 중...',
   '십신과 대운의 흐름을 정리하는 중...',
-  '연애 성향에서 가장 강한 부분을 고르는 중...',
-  '무료 맛보기를 다듬는 중...'
+  '사주에서 먼저 걸리는 연애 흐름을 보는 중...',
+  '말을 고르고 있어. 잠깐만...'
 ];
 
 const fullLoadingSteps = [
   '결제 확인 완료. 전체 사주를 다시 펼치는 중...',
-  '미래 인연의 성향을 좁혀보는 중...',
+  '배우자 자리에서 사람의 인상을 좁혀보는 중...',
   '사주에서 잡힌 인상을 바탕으로 배우자 모습을 그리는 중...',
   '첫 만남과 감정의 흐름을 읽는 중...',
   '갈등·재회·결혼 흐름을 살펴보는 중...',
-  '앞으로 5년과 12개월 운을 정리하는 중...',
-  '마지막 점사를 다듬는 중...'
+  '앞으로 움직이는 인연 시기를 짚어보는 중...',
+  '사주책을 덮기 전에 마지막으로 한 번 더 보는 중...'
 ];
 
 const sampleFortune = {
   opening: {
-    title: '맛보기 — 첫눈에 잡히는 연애 팔자',
-    body: '음… 네 사주에서 연애 쪽을 보면 사람을 좋아하는 속도보다 마음을 허락하는 속도가 더 느려. 겉으로는 대수롭지 않은 척해도, 진짜 마음 안으로 들이는 건 별개야. 몇 번 더 보고 말과 행동이 같은 사람인지 은근히 오래 보는 쪽이지. 그런데 한번 안으로 들어오면 그때부터는 네가 더 예민해져.',
+    title: '맛보기 · 사주를 펴자마자 걸리는 것',
+    body: '음… 연애 쪽을 먼저 보면 마음이 움직이는 속도보다 마음 안으로 사람을 들이는 속도가 더 느려. 겉으로는 금방 친해지는 것처럼 보여도 진짜 좋아하는 건 별개야. 몇 번 더 보고, 말과 행동이 같은지 조용히 확인하는 쪽이지. 그런데 한번 안으로 들어오면 그때부터는 네가 생각한 것보다 훨씬 깊어져.',
     wide: true
   },
   sections: [
-    { title: '맛보기 — 이성이 보는 매력', body: '처음엔 속을 잘 안 보여주는 사람처럼 보이기 쉬워. 그런데 두세 번 말을 섞으면 장난기와 챙겨주는 면이 같이 튀어나와. 처음 봤을 때와 친해진 뒤의 온도 차이가 오히려 사람을 붙잡는 쪽이야.', wide: false },
-    { title: '맛보기 — 미래 인연 한 조각', body: '상대를 하나로 좁혀보면 처음부터 화려하게 시선을 끄는 사람보다, 단정하고 차분한데 가까워질수록 표정이 풀리는 사람이 더 진하게 잡혀. 완전히 낯선 자리에서 번쩍 만나는 것보다 같은 동선이 몇 번 겹치며 익숙해지는 그림이 더 자연스럽고.', wide: false },
-    { title: '결제 후 열리는 내용', body: '미래 연인의 상세한 모습과 성격, 직업 성향, 만남 경로, 첫 만남, 고백, 갈등, 재회, 결혼, 앞으로의 연애 흐름까지 이어서 본다.', wide: true }
+    { title: '맛보기 · 네가 사랑에 들어가는 방식', body: '처음에는 오히려 네가 덜 관심 있는 사람처럼 보일 수 있어. 마음에 들수록 말을 조금 아끼고 상대 반응을 더 보는 식이거든. 근데 친해지면 온도가 달라져. 챙길 때는 티 안 나게 챙기고, 상대가 그걸 알아차린 뒤부터 관계가 확 가까워지는 그림이 있어.', wide: true },
+    { title: '맛보기 · 인연 쪽에서 하나 더 보이는 것', body: '가만있어 봐. 처음부터 화려하게 시선을 끄는 사람보다 두 번째, 세 번째 볼 때 표정이 자꾸 생각나는 사람이 더 진하게 잡혀. 완전히 낯선 자리에서 번쩍 만나는 것보다는 같은 동선이 몇 번 겹치거나, 누군가의 연결로 한 번 더 보게 되는 흐름이 자연스럽고. 여기 뒤쪽은 배우자 자리까지 같이 봐야 말이 더 선명해져.', wide: true }
   ],
   spouseVisual: {
     description: '단정하고 차분한 인상, 가까워질수록 웃는 표정이 부드러워지는 사람.',
     genderPresentation: '중성적이고 자연스러운 분위기', ageRange: '성인', face: '부드럽고 단정한 얼굴 인상', eyes: '차분한 눈매', hair: '자연스러운 헤어', build: '균형 잡힌 체형', fashion: '깔끔하고 절제된 옷차림', expression: '편안한 미소', atmosphere: '조용하고 따뜻한 분위기', caption: '사주에서 묘사된 분위기를 바탕으로 만든 상징 이미지입니다.'
   },
-  closing: { title: '맛보기 한마디', body: '처음부터 확 끌리는 사람보다 두 번째, 세 번째 볼 때 마음에 남는 사람을 잘 봐. 네 인연은 그런 식으로 슬쩍 들어오는 쪽이 더 진해.', wide: true }
+  closing: { title: '맛보기 한마디', body: '네 인연은 첫눈에 다 결정되는 식보다, 한 번 더 보게 되면서 마음이 붙는 쪽이 더 진해. 그래서 첫 느낌 하나만 가지고 너무 빨리 사람을 잘라내지는 마.', wide: true }
 };
 
 
@@ -410,51 +382,98 @@ function cleanResultText(raw) {
     .replace(/^#{1,6}\s*/gm, '')
     .replace(/`{1,3}/g, '')
     .replace(/^[-_*]{3,}\s*$/gm, '')
+    .replace(/^\s*[-•]\s+/gm, '')
     .trim();
 }
 
-function formatBody(raw) {
+function inlineFormat(raw) {
   return escapeHtml(cleanResultText(raw))
-    .replace(/(★{1,5}☆{0,5})/g, '<span class="stars">$1</span>')
-    .replace(/\n/g, '<br>');
+    .replace(/(★{1,5}☆{0,5})/g, '<span class="stars">$1</span>');
 }
 
-function createResultCard(section) {
+function formatBody(raw) {
+  return inlineFormat(raw).replace(/\n/g, '<br>');
+}
+
+function formatNarrativeBody(raw) {
+  const text = cleanResultText(raw);
+  if (!text) return '<p></p>';
+  const paragraphs = text.split(/\n\s*\n+/).map((x) => x.trim()).filter(Boolean);
+  return paragraphs.map((paragraph) => {
+    const html = inlineFormat(paragraph).replace(/\n/g, '<br>');
+    return `<p>${html}</p>`;
+  }).join('');
+}
+
+function createPreviewCard(section) {
   const card = document.createElement('article');
-  const autoWide = /앞으로 12개월|앞으로 5년|최종 점사 카드|마지막 점사|누가 먼저 빠지는가|결제 후/.test(section.title || '');
-  card.className = `result-card${section.wide || autoWide ? ' wide' : ''}${/결제 후/.test(section.title || '') ? ' locked-preview-card' : ''}`;
-  card.innerHTML = `<h3>${escapeHtml(section.title || '점사')}</h3><p>${formatBody(section.body || '')}</p>`;
+  card.className = 'result-card wide preview-reading-card';
+  card.innerHTML = `<h3>${escapeHtml(section.title || '점사')}</h3><div class="preview-reading-body">${formatNarrativeBody(section.body || '')}</div>`;
   return card;
 }
 
-function createSpouseVisualCard(spouseVisual, spouseImage) {
-  if (!spouseVisual) return null;
+function createChapterCard(section, index) {
   const card = document.createElement('article');
-  card.className = 'result-card wide spouse-visual-card';
-  card.id = 'spouseVisualCard';
-  const caption = spouseVisual.caption || '사주에서 묘사된 분위기를 바탕으로 만든 상징 이미지입니다. 실제 미래 배우자의 얼굴을 예측한 사진은 아닙니다.';
+  card.className = 'reading-chapter';
+  card.dataset.chapter = String(index + 1).padStart(2, '0');
+  card.innerHTML = `
+    <div class="chapter-heading">
+      <span class="chapter-index">${String(index + 1).padStart(2, '0')}</span>
+      <h3>${escapeHtml(section.title || '점사')}</h3>
+    </div>
+    <div class="chapter-body">${formatNarrativeBody(section.body || '')}</div>
+  `;
+  return card;
+}
+
+function createSpouseVisualBlock(spouseVisual, spouseImage) {
+  if (!spouseVisual) return null;
+  const block = document.createElement('section');
+  block.className = 'spouse-portrait-block';
+  block.id = 'spouseVisualCard';
+  const caption = spouseVisual.caption || '사주에서 묘사된 인연의 분위기를 시각화한 창작 이미지입니다. 실제 미래 인물의 얼굴을 예측한 사진은 아닙니다.';
   let visual = '';
   if (spouseImage?.dataUrl) {
     visual = `<div class="spouse-image-wrap" id="spouseVisualMedia"><img src="${spouseImage.dataUrl}" alt="사주에서 묘사된 미래 인연의 분위기를 시각화한 생성 이미지"></div>`;
   } else if (spouseImage?.loading) {
-    visual = `<div class="spouse-image-placeholder generating" id="spouseVisualMedia"><span>緣</span><p>잠깐만.<br>지금 사주에서 잡힌 인상을 한 장의 모습으로 그리고 있어.</p></div>`;
+    visual = `<div class="spouse-image-placeholder generating" id="spouseVisualMedia"><span>緣</span><p>가만있어 봐.<br>지금 배우자 자리에서 잡힌 인상을 한 장으로 옮기고 있어.</p></div>`;
   } else if (spouseImage?.enabled) {
-    visual = `<div class="spouse-image-placeholder" id="spouseVisualMedia"><span>緣</span><p>배우자 이미지 생성은 잠시 뒤 다시 시도해줘.<br>글 점사는 정상적으로 완성됐어.</p></div>`;
+    visual = `<div class="spouse-image-placeholder" id="spouseVisualMedia"><span>緣</span><p>이번에는 그림을 만들지 못했어.<br>위에 적힌 사람의 인상은 그대로 보면 돼.</p></div>`;
     if (spouseImage?.error) console.warn('[spouse image]', spouseImage.error);
   } else {
     visual = `<div class="spouse-image-placeholder"><span>緣</span><p>배우자 이미지 기능이 꺼져 있어.</p></div>`;
   }
-  card.innerHTML = `
-    <div class="spouse-visual-copy">
-      <span class="spouse-kicker">사주가 그린 인연의 인상</span>
-      <h3>미래 배우자 분위기 이미지</h3>
-      <p>${formatBody(spouseVisual.description || '')}</p>
-      <div class="spouse-tags">
-        ${['ageRange','face','eyes','hair','fashion','atmosphere'].map((key) => spouseVisual[key] ? `<span>${escapeHtml(spouseVisual[key])}</span>` : '').join('')}
-      </div>
-      <small>${escapeHtml(caption)}</small>
+
+  const tags = ['ageRange','face','eyes','hair','fashion','atmosphere']
+    .map((key) => spouseVisual[key] ? `<span>${escapeHtml(spouseVisual[key])}</span>` : '')
+    .join('');
+
+  block.innerHTML = `
+    <div class="spouse-portrait-head">
+      <span>사주가 그린 인연의 인상</span>
+      <h4>말로 잡힌 모습을 한 장으로 옮기면</h4>
+      <p>위 점사에서 잡힌 얼굴 분위기와 표정, 옷차림, 전체 인상을 바탕으로 만든 상징적인 모습이야.</p>
     </div>
-    ${visual}`;
+    <div class="spouse-portrait-layout">
+      ${visual}
+      <div class="spouse-portrait-note">
+        <div class="spouse-visual-summary">${formatNarrativeBody(spouseVisual.description || '')}</div>
+        <div class="spouse-tags">${tags}</div>
+        <small>${escapeHtml(caption)}</small>
+      </div>
+    </div>
+  `;
+  return block;
+}
+
+function createClosingCard(section) {
+  const card = document.createElement('article');
+  card.className = 'reading-closing';
+  card.innerHTML = `
+    <span class="closing-kicker">마지막으로</span>
+    <h3>${escapeHtml(section.title || '사주책을 덮기 전에')}</h3>
+    <div class="chapter-body">${formatNarrativeBody(section.body || '')}</div>
+  `;
   return card;
 }
 
@@ -464,10 +483,11 @@ function renderResult(result, mode, spouseImage = null) {
   state.currentFortune = fortune;
   resultGrid.innerHTML = '';
   resultHighlight.innerHTML = '';
+  resultGrid.className = `result-grid ${mode === 'full' ? 'reading-flow' : 'preview-flow'}`;
 
   if (mode === 'full') {
-    resultEyebrow.textContent = '연월당 · 전체 점사';
-    resultTitle.textContent = '사주를 끝까지 펼쳐봤어';
+    resultEyebrow.textContent = '연월당 · 인연 점사';
+    resultTitle.textContent = '다 봤어. 이제 하나씩 말해줄게';
     paywallSection.classList.add('hidden');
   } else {
     resultEyebrow.textContent = mode === 'sample' ? '연월당 · 예시 점사' : '연월당 · 맛보기';
@@ -475,17 +495,24 @@ function renderResult(result, mode, spouseImage = null) {
   }
 
   const first = fortune.opening || { title: '첫 점사', body: '' };
-  resultHighlight.innerHTML = `<h3>${escapeHtml(first.title)}</h3><p>${formatBody(first.body)}</p>`;
+  resultHighlight.className = `result-highlight${mode === 'full' ? ' reading-prologue' : ''}`;
+  resultHighlight.innerHTML = `<span class="prologue-mark">緣</span><div><h3>${escapeHtml(first.title)}</h3><div class="prologue-body">${formatNarrativeBody(first.body)}</div></div>`;
 
   const sections = Array.isArray(fortune.sections) ? fortune.sections : [];
-  for (const section of sections) {
-    resultGrid.appendChild(createResultCard(section));
-    if (mode === 'full' && section.title === '미래 연인의 모습') {
-      const spouseCard = createSpouseVisualCard(fortune.spouseVisual, spouseImage);
-      if (spouseCard) resultGrid.appendChild(spouseCard);
-    }
+  if (mode === 'full') {
+    sections.forEach((section, index) => {
+      const chapter = createChapterCard(section, index);
+      resultGrid.appendChild(chapter);
+      if (index === 2 || /셋째 장|배우자 자리에/.test(section.title || '')) {
+        const spouseBlock = createSpouseVisualBlock(fortune.spouseVisual, spouseImage);
+        if (spouseBlock) chapter.appendChild(spouseBlock);
+      }
+    });
+    if (fortune.closing?.body) resultGrid.appendChild(createClosingCard(fortune.closing));
+  } else {
+    for (const section of sections) resultGrid.appendChild(createPreviewCard(section));
+    if (fortune.closing?.body) resultGrid.appendChild(createPreviewCard({ ...fortune.closing, wide: true }));
   }
-  if (fortune.closing?.body) resultGrid.appendChild(createResultCard({ ...fortune.closing, wide: true }));
 
   loadingPanel.classList.add('hidden');
   resultsSection.classList.remove('hidden');
@@ -524,7 +551,7 @@ function updateSpouseImage(spouseImage) {
     media.innerHTML = `<img src="${spouseImage.dataUrl}" alt="사주에서 묘사된 미래 인연의 분위기를 시각화한 생성 이미지">`;
   } else {
     media.className = 'spouse-image-placeholder';
-    media.innerHTML = '<span>緣</span><p>이미지는 이번에 만들지 못했어.<br>글 점사는 그대로 보면 돼.</p>';
+    media.innerHTML = '<span>緣</span><p>이번에는 그림을 만들지 못했어.<br>위에 적힌 사람의 인상은 그대로 보면 돼.</p>';
     if (spouseImage?.error) console.warn('[spouse image]', spouseImage.error);
   }
 }
