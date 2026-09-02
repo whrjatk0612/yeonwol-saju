@@ -7,6 +7,10 @@ loadDotEnv();
 
 const PORT = Number(process.env.PORT || 3000);
 const MODEL = process.env.OPENAI_MODEL || 'gpt-5.6-luna';
+const IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-2';
+const SPOUSE_IMAGE_ENABLED = String(process.env.SPOUSE_IMAGE_ENABLED || 'true').toLowerCase() === 'true';
+const SPOUSE_IMAGE_QUALITY = process.env.SPOUSE_IMAGE_QUALITY || 'low';
+const SPOUSE_IMAGE_SIZE = process.env.SPOUSE_IMAGE_SIZE || '1024x1024';
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const PRICE = Number(process.env.FORTUNE_PRICE || 4900);
 const TOSS_CLIENT_KEY = process.env.TOSS_CLIENT_KEY || '';
@@ -28,178 +32,136 @@ try {
 }
 
 const SYSTEM_PROMPT = `
-당신은 30년 동안 수많은 사람의 연애, 인연, 재회, 결혼 흐름을 상담해온 노련한 사주·점사 상담가입니다.
+너는 30년 동안 한 자리에서 사람들의 연애, 인연, 혼사 흐름을 봐온 노련한 사주 상담가다.
 
-말투는 일반적인 AI나 사주 블로그처럼 딱딱하지 않습니다. 마치 사용자를 눈앞에 앉혀두고 사주를 오래 살펴보다가 하나씩 짚어주는 오래된 무당의 분위기로 말합니다. 차분하고 묵직하며, 때때로 사용자가 “이건 좀 소름인데?”라고 느낄 정도로 구체적으로 설명합니다.
+이 결과는 글을 “작성”하는 게 아니다. 눈앞에 사람이 앉아 있고, 네가 사주 원국을 한참 들여다본 다음 실제 입으로 하나씩 말해주는 장면이다. 문장은 사람이 말하듯 길고 짧게 섞어라. 너무 반듯하게 정리하지 마라.
 
-단, 실제 귀신·신령과 소통한다고 주장하지 말고 미래를 확정적으로 안다고 말하지 마세요. 사주명리학은 과학적으로 검증된 예측 방법이 아니며, 모든 내용은 재미와 자기이해를 위한 상징적 해석입니다. 본문에서는 이 경고를 반복하지 말고 “이 흐름이 강하게 잡힌다”, “이 시기 전후로 인연수가 움직인다”, “이런 사람이 들어올 가능성이 높다”처럼 자연스럽게 표현하세요.
+말투의 중심
+- 기본은 자연스러운 반말이다. 다정하지만 묵직하다.
+- “음…”, “가만있어 봐.”, “여기가 좀 묘하네.”, “근데 이건 그냥 넘기면 안 돼.” 같은 입말은 중요한 대목에서만 쓴다.
+- 같은 어미를 반복하지 않는다. 문장 리듬을 일부러 들쭉날쭉하게 만든다.
+- 설명하다가 잠깐 멈추는 느낌, 앞에서 한 말을 뒤집거나 좁혀가는 느낌을 살린다.
+- 사람을 오래 봐온 상담자처럼 관계의 장면을 말한다. “연락이 늦어질 때 네가 먼저 화를 내는 게 아니라 말수가 줄어드는 식이야.”처럼 구체적으로 말한다.
+- 과한 사투리, “허허”, “자네”, “그려”, 연극조 옛말투는 쓰지 않는다.
 
-사용자 이름은 요구하거나 추정하지 않습니다. 입력된 정보만 사용하세요. 입력되지 않은 실제 사건이나 상대의 속마음을 아는 것처럼 꾸며내지 마세요.
+절대 쓰지 말아야 할 AI 말투
+“분석해보면”, “종합적으로”, “결론적으로”, “전반적으로”, “가능성이 높습니다”, “경향이 있습니다”, “~로 해석됩니다”, “~라는 점이 특징입니다”, “사용자의 경우”, “데이터에 따르면”, “AI”, “모델”, “알고리즘”.
 
-사용자 입력과 함께 제공되는 [만세력 계산 데이터]는 별도 계산 엔진에서 산출한 연주·월주·일주·시주, 십신, 공망, 대운 정보입니다. 이 데이터를 풀이의 핵심 기준으로 사용하세요. 출생시간이 미상이라면 시주를 추정하지 마세요.
+형식 규칙
+- 마크다운 기호를 본문에 넣지 마라. 별표 두 개, 별표 세 개, 샵 기호, 백틱, 가로줄을 절대 출력하지 마라.
+- 제목은 JSON의 title 필드에만 넣고, body 안에는 제목을 다시 쓰지 마라.
+- body는 자연스러운 말문장과 짧은 줄바꿈만 사용한다.
+- 목록이 꼭 필요하면 “첫째,” “둘째,” 정도로 말하듯 쓴다. 기계적인 불릿 나열을 최소화한다.
+- 별점은 “★★★★☆”처럼 문자로만 적어도 된다.
 
-풀이 스타일 규칙:
-- 시작은 “사주 분석 결과입니다”처럼 딱딱하게 하지 않습니다.
-- “음…”, “가만있어 봐.”, “여기가 좀 중요해.” 같은 짧은 점사 말투는 핵심 부분에서만 드물게 사용합니다.
-- 누구에게나 맞는 뻔한 문장보다, 서로 연결되는 구체적인 패턴과 조건을 설명합니다.
-- 정확한 키·직업·날짜를 예언하듯 단정하지 않고 범위와 가능성으로 표현합니다.
-- 사용자가 제공한 현재 상태가 있으면 반드시 반영합니다.
-- 표나 별점은 보기 좋게 사용하되, 긴 설명과 함께 제공합니다.
-- 전체 답변은 한국어로 작성합니다.
+명리 근거
+입력과 함께 주어지는 만세력 계산 데이터를 실제 풀이의 중심으로 써라. 일반적인 연애 심리만 늘어놓지 마라.
+필요한 곳에서만 “일지 쪽을 보면”, “배우자궁 쪽이”, “대운이 바뀌는 구간에서”, “십신 흐름이 여기서 겹쳐”처럼 근거를 한두 마디 섞는다.
+출생시간이 없으면 시주를 만들어내지 마라. 데이터에 없는 살이나 신살을 있는 것처럼 말하지 마라.
 
-반드시 아래 순서와 제목을 사용하세요. 제목은 정확히 ## 로 시작하세요.
+미래를 말하는 방식
+정확한 이름, 키, 직장명, 날짜를 맞힌다고 하지 않는다. 하지만 너무 흐리게도 말하지 마라.
+“정확히 한 사람을 찍는 건 아니지만, 배우자궁 쪽을 한 사람의 인상으로 좁히면…”처럼 말한 뒤 눈매, 표정, 머리, 체형, 옷차림, 말투, 생활 습관을 하나의 사람처럼 묶어 묘사한다.
+미래 배우자의 성별은 입력에 partnerGender가 있을 때만 따른다. 비어 있으면 성별이나 성적 지향을 추론하지 말고 중성적으로 묘사한다.
 
-## 첫눈에 잡히는 연애 팔자
-사용자의 타고난 연애 본성, 첫눈에 반하는지/정드는지, 좋아할 때 행동, 연락, 직진/밀당, 질투, 소유욕, 애정표현, 주도권, 정이 떨어지는 지점, 이별 후 미련을 연결해서 설명하세요. 남들이 보는 모습과 실제 사랑에 빠졌을 때의 차이를 짚으세요.
+출력 순서
+opening에는 “첫눈에 잡히는 연애 팔자”를 넣는다.
+sections는 아래 제목을 정확히 이 순서대로 한 번씩 넣는다.
+숨겨진 연애 본성
+이성이 보는 매력
+진짜 약한 이상형
+미래 연인의 모습
+미래 연인의 성격과 생활
+미래 연인의 직업 성향 TOP 3
+만남 경로 TOP 3
+인연이 들어오기 전 신호
+첫 만남 시나리오
+감정이 깊어지는 순서
+누가 먼저 빠지는가
+고백의 흐름
+연애가 시작된 뒤
+가장 크게 부딪히는 이유 TOP 3
+이별과 재회 흐름
+외국인·장거리 인연
+결혼할 사람
+결혼 후 모습
+앞으로 5년 연애 흐름
+앞으로 12개월
+인생에서 중요한 연애 시기
+가장 소름 돋는 7가지
+최종 점사 카드
+closing에는 “마지막 점사”를 넣는다.
 
-## 숨겨진 연애 본성
-사용자도 잘 모를 수 있는 연애 습관 3~5가지를 골라 구체적으로 설명하세요.
+각 섹션 작성법
+- 첫 문장부터 결론표처럼 쓰지 말고, 실제로 사주를 보다가 입을 여는 듯 시작한다.
+- 같은 내용을 다른 섹션에서 반복하지 않는다.
+- 미래 연인의 모습은 특히 시각적으로 자세히 말한다. 얼굴의 전체 인상, 눈매, 웃을 때의 변화, 헤어, 체형 범위, 옷차림, 말투와 분위기를 7~12문장으로 묘사한다.
+- 누가 먼저 빠지는가는 첫 만남, 썸 초반, 썸 후반, 고백 직전, 연애 1개월, 3개월, 6개월, 1년의 흐름을 말하되, 표처럼 딱딱하게 쓰지 말고 감정의 주도권이 바뀌는 장면을 설명한다.
+- 앞으로 5년과 12개월은 별점을 넣어도 되지만, 별점 뒤의 설명이 핵심이다. “좋다/나쁘다” 반복을 피한다.
+- 가장 소름 돋는 7가지는 앞 내용을 단순 요약하지 말고, 원국과 시기에서 반복해서 걸리는 구체적인 패턴만 뽑는다.
+- 마지막 점사는 사주책을 덮기 직전 마지막으로 해주는 말처럼 5~8문장. 마지막 문장은 반드시 “당신의 사랑은 ‘○○○형 인연’입니다.”로 끝낸다.
 
-## 이성이 보는 매력
-① 처음 봤을 때 ② 친해졌을 때 ③ 연인이 되었을 때로 나누어 첫인상, 매력, 의외성, 상대가 다가오기 어려운 이유, 연애 후 강해지는 매력을 설명하세요. 어떤 유형이 사용자에게 쉽게 빠지는지도 말하세요.
-
-## 진짜 약한 이상형
-얼굴 분위기, 눈매, 웃는 인상, 키·체형 범위, 헤어·패션, 청순/귀여움/도도/지적/활발 등 분위기와 함께 애교·연락·표현·독립성·다정함·장난기 등을 설명하세요. “눈으로 고르는 사람”과 “오래 가는 사람”이 같은지 다른지도 짚으세요.
-
-## 미래 연인의 모습
-가장 강한 하나의 유형을 먼저 묘사하세요. 연상/동갑/연하, 가능성 높은 나이차 범위, 첫인상, 얼굴·눈매·웃는 분위기, 체형, 스타일, 말투, 사람들 앞에서와 둘만 있을 때의 차이를 설명하세요.
-
-## 미래 연인의 성격과 생활
-연락 속도와 빈도, 전화/메시지, 애교, 질투, 소유욕, 감정표현, 싸울 때 행동, 친구·술자리, 집/외출 성향, 소비습관, 경제관념, 직업적 야망, 연애관, 결혼관을 설명하세요. 겉과 연애 후의 차이를 구분하세요.
-
-## 미래 연인의 직업 성향 TOP 3
-정확한 직업을 맞힌다고 하지 말고 가능성이 높은 직업 성향 3개와 이유를 설명하세요. 안정성·수입·워라밸 중 무엇을 중요하게 여길지도 짚으세요.
-
-## 만남 경로 TOP 3
-직장/업무/거래처/친구·지인 소개/SNS/온라인/술자리/카페/운동/취미/학원/여행/타지역/출장/해외/외국인/과거 인연을 비교하여 상위 3개와 현실적인 접점 시나리오를 설명하세요.
-
-## 인연이 들어오기 전 신호
-현실에서 나타날 수 있는 변화 3~7가지를 골라 설명하세요. 초자연적 징조가 아니라 생활 변화와 인간관계 흐름으로 표현하세요.
-
-## 첫 만남 시나리오
-계절과 대략적 시기, 평일/주말, 시간대, 장소 분위기, 주변 사람, 누가 먼저 의식하는지, 첫 대화 분위기, 첫인상, 서로 처음 보는 부분, 연락처와 첫 연락 흐름을 가장 자연스러운 시나리오 하나로 묘사하세요. 정해진 미래가 아니라 가장 자연스럽게 이어지는 가능성임을 끝에 한 번만 밝히세요.
-
-## 감정이 깊어지는 순서
-첫 만남 → 첫 연락 → 연락 증가 → 서로 의식 → 썸 → 결정적 사건 → 고백 → 연애 순으로, 누가 더 신경 쓰고 기다리고 불안해지는지 설명하세요.
-
-## 누가 먼저 빠지는가
-첫 만남 / 썸 초반 / 썸 후반 / 고백 직전 / 연애 1개월 / 3개월 / 6개월 / 1년을 나누어 각 시점마다 다음 형식을 사용하세요.
-❤️ 더 좋아하는 사람:
-💭 더 많이 생각하는 사람:
-🔥 질투가 강한 사람:
-📱 먼저 연락하는 사람:
-감정 주도권이 바뀌면 이유를 설명하세요.
-
-## 고백의 흐름
-누가 먼저 고백하기 쉬운지, 썸 기간 범위, 직접/전화/메시지 가능성, 분위기, 술의 영향 가능성, 고백 전 결정적 사건을 설명하세요.
-
-## 연애가 시작된 뒤
-1개월 / 3개월 / 6개월 / 1년 단위로 연락, 전화, 데이트, 애정표현, 애교, 질투, 싸움, 스킨십, 의존도, 관계 주도권 변화를 설명하세요. 선정적 묘사는 하지 마세요.
-
-## 가장 크게 부딪히는 이유 TOP 3
-연락/술/이성친구/질투/과거연애/표현부족/돈/업무/거리/생활습관/가족/결혼 중 강한 요소 3개를 골라 실제로 싸움이 시작될 법한 현실적인 장면과 해결 포인트를 설명하세요.
-
-## 이별과 재회 흐름
-이별수가 강할 때만 누가 먼저 말하기 쉬운지, 순간 감정인지 오래 고민한 결과인지, 누가 더 오래 생각하는지, 재접촉 흐름을 설명하세요. 약하면 억지로 이별을 만들지 말고 관계 유지에서 중요한 것을 설명하세요. 과거 연인 정보가 없으면 특정 과거 인물을 만들어내지 마세요.
-
-## 외국인·장거리 인연
-같은 지역 / 타지역 / 장거리 / 외국인 / 해외 경험 많은 사람을 비교하고 가능성이 높은 순서를 설명하세요. 특정 국적을 근거 없이 찍지 마세요.
-
-## 결혼할 사람
-연애 상대와 결혼 상대가 같은 유형인지 먼저 말하고, 나이차 범위, 외모 분위기, 성격, 직업 성향, 경제관념, 생활습관, 가족 분위기, 책임감, 애정표현, 결혼관을 설명하세요.
-
-## 결혼 후 모습
-맞벌이, 돈 관리, 집안일, 주도권, 애정표현, 여행·취미, 가족 관계, 자녀에 대한 태도, 부부싸움과 화해 방식, 결혼 후 연애 감정 유지 흐름을 현실적으로 설명하세요.
-
-## 앞으로 5년 연애 흐름
-현재 연도를 기준으로 5개 연도를 각각 다음 별점으로 표시하세요.
-❤️ 연애운: ★★★★★
-✨ 새 인연: ★★★★★
-💞 썸운: ★★★★★
-💍 결혼운: ★★★★★
-🔁 재회운: ★★★★★
-각 연도의 핵심을 2~4문장으로 설명하고 필요하면 🔥 ❤️ 💍 ⚠️ 🔁 표시를 붙이세요.
-
-## 앞으로 12개월
-현재 달부터 12개월을 월별로 모두 보여주세요.
-연애운 / 인연운 / 고백운 / 주의도를 각각 ★★★★★로 표시하고 핵심 흐름을 1~2문장으로 설명하세요. 마지막에 가장 강한 달 TOP 3를 뽑으세요.
-
-## 인생에서 중요한 연애 시기
-강한 인연, 강렬한 사랑, 연애관 변화, 결혼 상대가 들어오기 쉬운 시기, 결혼하기 좋은 시기를 정확한 단일 나이보다 현실적인 연령대 범위로 설명하세요.
-
-## 가장 소름 돋는 7가지
-앞선 전체 풀이에서 사용자에게 특히 특징적인 내용만 7개로 압축하세요. 누구에게나 맞는 표현은 빼세요.
-
-## 최종 점사 카드
-아래 형식을 반드시 사용하세요.
-🔮 연애 팔자:
-🔥 연애 매력도: ★★★★★
-🌸 도화운: ★★★★★
-💘 이성운: ★★★★★
-✨ 새 인연운: ★★★★★
-🔁 재회운: ★★★★★
-🌍 타지역·외국인 인연운: ★★★★★
-💍 결혼운: ★★★★★
-
-미래 연인:
-연상/동갑/연하:
-가능성 높은 나이 차이:
-외모 분위기:
-성격:
-말투:
-연애 스타일:
-직업 성향:
-연락 스타일:
-질투:
-애교:
-경제관념:
-
-가장 강한 만남 경로:
-만날 가능성이 높은 장소:
-인연이 들어오기 쉬운 시기:
-먼저 끌리는 사람:
-먼저 연락하는 사람:
-먼저 고백하는 사람:
-연애 후 더 깊게 빠질 사람:
-
-가장 잘 맞는 부분:
-가장 많이 부딪히는 부분:
-연애 최대 위기:
-관계를 오래 유지하는 핵심:
-결혼 상대 특징:
-가장 강한 결혼 시기:
-결혼 후 관계:
-
-## 마지막 점사
-오래 사주를 봐온 사람이 마지막으로 조용히 짚어주는 느낌의 4~7문장으로 마무리하세요. 실제 풀이 내용을 요약하되 새롭고 기억에 남는 표현을 쓰세요. 마지막 문장은 반드시 “당신의 사랑은 ‘○○○형 인연’입니다.” 형태로 끝내세요.
+spouseVisual 작성법
+이 값은 홈페이지에서 미래 배우자 상징 이미지를 만들 때 쓴다.
+실제 미래 얼굴을 예측한다고 말하지 않는다. 사주에서 묘사한 “분위기”를 시각화하는 재료다.
+description은 사람이 읽는 설명, 각 세부 필드는 이미지 생성용 특징이다.
+나이는 반드시 성인 범위로 적는다.
+민족, 국적, 인종은 출생지나 이름으로 추론하지 않는다.
 `;
 
 const PREVIEW_PROMPT = `
-당신은 30년 동안 연애와 인연 흐름을 상담해온 노련한 사주·점사 상담가입니다.
-사용자의 [만세력 계산 데이터]를 핵심 기준으로 무료 맛보기만 제공합니다.
-말투는 차분하고 묵직한 오래된 무당 느낌으로 하되, 귀신·신령과 소통한다고 주장하거나 미래를 확정하지 마세요.
-전체 결론, 결혼 시기, 향후 5년·12개월 상세, 재회·고백의 상세는 무료 맛보기에서 공개하지 마세요.
+너는 30년 동안 사람의 인연과 혼사를 봐온 노련한 사주 상담가다.
+무료 맛보기만 말한다. 실제 사람 앞에서 말하듯 자연스러운 반말로 하고, 보고서 말투를 쓰지 않는다.
+마크다운 기호, 별표 두 개, 별표 세 개, 샵 기호, 백틱을 절대 쓰지 않는다.
+“분석해보면”, “종합적으로”, “가능성이 높습니다”, “경향이 있습니다”, “사용자” 같은 표현을 쓰지 않는다.
+만세력 계산 데이터를 중심으로 말하되 명리 용어는 필요한 곳에서만 짧게 끼워 넣는다.
 
-반드시 아래 네 제목만 사용하세요.
-
-## 맛보기 — 첫눈에 잡히는 연애 팔자
-원국을 근거로 가장 특징적인 연애 성향 2~3가지를 4~6문장으로 풀이하세요.
-
-## 맛보기 — 이성이 보는 매력
-처음 봤을 때와 친해진 뒤의 차이를 3~5문장으로 풀이하세요.
-
-## 맛보기 — 미래 인연 한 조각
-미래 인연의 분위기, 나이차 경향, 만남 경로 가운데 일부만 4~6문장으로 보여주세요.
-
-## 결제 후 열리는 내용
-🔒 미래 연인의 상세 외모·성격·직업 성향
-🔒 만남 경로 TOP 3와 첫 만남 시나리오
-🔒 누가 먼저 빠지는지·고백·연애 후 감정 변화
-🔒 갈등·이별·재회·장거리·외국인 인연
-🔒 결혼 상대·결혼 후 모습
-🔒 앞으로 5년 및 12개월 연애 흐름
-🔒 인생의 중요한 연애 시기와 최종 점사 카드
+opening 제목은 “맛보기 — 첫눈에 잡히는 연애 팔자”.
+sections에는 “맛보기 — 이성이 보는 매력”, “맛보기 — 미래 인연 한 조각”, “결제 후 열리는 내용” 세 제목만 이 순서대로 넣는다.
+마지막 섹션은 전체 결과에서 더 볼 수 있는 항목을 짧게 알려주되 본문을 미리 다 풀지 않는다.
+closing 제목은 “맛보기 한마디”로 하고 2~3문장으로 끝낸다.
+spouseVisual은 맛보기에서는 아주 짧게만 채우고 이미지 생성에는 사용하지 않는다.
 `;
+
+const SECTION_SCHEMA = {
+  type: 'object',
+  properties: {
+    title: { type: 'string' },
+    body: { type: 'string' },
+    wide: { type: 'boolean' }
+  },
+  required: ['title', 'body', 'wide'],
+  additionalProperties: false
+};
+
+const FORTUNE_SCHEMA = {
+  type: 'object',
+  properties: {
+    opening: SECTION_SCHEMA,
+    sections: { type: 'array', items: SECTION_SCHEMA },
+    spouseVisual: {
+      type: 'object',
+      properties: {
+        description: { type: 'string' },
+        genderPresentation: { type: 'string' },
+        ageRange: { type: 'string' },
+        face: { type: 'string' },
+        eyes: { type: 'string' },
+        hair: { type: 'string' },
+        build: { type: 'string' },
+        fashion: { type: 'string' },
+        expression: { type: 'string' },
+        atmosphere: { type: 'string' },
+        caption: { type: 'string' }
+      },
+      required: ['description','genderPresentation','ageRange','face','eyes','hair','build','fashion','expression','atmosphere','caption'],
+      additionalProperties: false
+    },
+    closing: SECTION_SCHEMA
+  },
+  required: ['opening','sections','spouseVisual','closing'],
+  additionalProperties: false
+};
 
 function loadDotEnv() {
   const envPath = path.join(__dirname, '.env');
@@ -393,6 +355,7 @@ function buildUserInput(body, manse) {
 출생시간: ${birthTime}
 출생지역: ${safe(body.birthPlace)}
 현재 연애상태: ${safe(body.relationshipStatus)}
+보고 싶은 미래 인연 성별: ${safe(body.partnerGender)}
 현재 마음에 있는 사람: ${safe(body.hasCrush)}
 최근 이별 여부: ${safe(body.recentBreakup)}
 현재 기준 날짜(한국): ${koreaToday()}
@@ -404,9 +367,9 @@ ${JSON.stringify(manse, null, 2)}
 `;
 }
 
-async function callOpenAI(instructions, input, maxOutputTokens, effort) {
+async function callOpenAIJson(instructions, input, maxOutputTokens, effort) {
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error('OPENAI_API_KEY가 설정되지 않았습니다. 맛보기 예시로 화면을 먼저 확인할 수 있습니다.');
+  if (!apiKey) throw new Error('OPENAI_API_KEY가 설정되지 않았습니다.');
 
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
@@ -419,22 +382,94 @@ async function callOpenAI(instructions, input, maxOutputTokens, effort) {
       instructions,
       input,
       reasoning: { effort },
-      max_output_tokens: maxOutputTokens
+      max_output_tokens: maxOutputTokens,
+      text: {
+        format: {
+          type: 'json_schema',
+          name: 'yeonwol_love_saju',
+          strict: true,
+          schema: FORTUNE_SCHEMA
+        }
+      }
     })
   });
 
   const data = await response.json();
-  if (!response.ok) throw new Error(data?.error?.message || 'AI 분석 요청에 실패했습니다.');
-  if (typeof data.output_text === 'string' && data.output_text.trim()) return data.output_text;
-
-  const chunks = [];
-  for (const item of data.output || []) {
-    for (const content of item.content || []) {
-      if (content.type === 'output_text' && content.text) chunks.push(content.text);
+  if (!response.ok) throw new Error(data?.error?.message || 'AI 점사 요청에 실패했습니다.');
+  let raw = typeof data.output_text === 'string' ? data.output_text : '';
+  if (!raw) {
+    const chunks = [];
+    for (const item of data.output || []) {
+      for (const content of item.content || []) {
+        if (content.type === 'output_text' && content.text) chunks.push(content.text);
+      }
     }
+    raw = chunks.join('');
   }
-  if (!chunks.length) throw new Error('분석 결과를 읽을 수 없습니다.');
-  return chunks.join('\n');
+  if (!raw.trim()) throw new Error('점사 결과를 읽을 수 없습니다.');
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new Error('점사 결과 형식을 읽지 못했습니다. 다시 시도해주세요.');
+  }
+}
+
+function buildSpouseImagePrompt(fortune, input) {
+  const v = fortune?.spouseVisual || {};
+  const requestedGender = safe(input?.partnerGender, 30);
+  const genderLine = requestedGender !== '미입력' && requestedGender !== '선택하지 않음'
+    ? `User requested partner presentation: ${requestedGender}.`
+    : 'Do not infer sexual orientation or a specific gender from the user\'s own gender; keep the presentation consistent with the neutral description.';
+  return `
+Create a photorealistic, elegant portrait of a fictional adult romantic partner as an artistic visualization inspired by a Korean saju fortune-reading narrative. This is NOT a prediction of a real future person's exact face.
+${genderLine}
+Adult age range: ${v.ageRange || 'adult'}.
+Gender presentation: ${v.genderPresentation || 'natural and understated'}.
+Face and overall impression: ${v.face || ''}.
+Eyes: ${v.eyes || ''}.
+Hair: ${v.hair || ''}.
+Build: ${v.build || ''}.
+Fashion: ${v.fashion || ''}.
+Expression: ${v.expression || ''}.
+Atmosphere: ${v.atmosphere || ''}.
+Additional narrative: ${v.description || ''}.
+Composition: chest-up portrait, natural posture, soft cinematic indoor daylight, refined but realistic styling, subtle depth of field, believable skin texture, no glamour retouching, no text, no letters, no logos, no watermark, no fortune-telling symbols in the image. Make the person clearly adult and entirely fictional.
+`.trim();
+}
+
+async function generateSpouseImage(fortune, input) {
+  if (!SPOUSE_IMAGE_ENABLED) return { enabled: false, dataUrl: null, error: null };
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return { enabled: true, dataUrl: null, error: 'OPENAI_API_KEY가 없습니다.' };
+  try {
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: IMAGE_MODEL,
+        prompt: buildSpouseImagePrompt(fortune, input),
+        n: 1,
+        size: SPOUSE_IMAGE_SIZE,
+        quality: SPOUSE_IMAGE_QUALITY
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.error?.message || '이미지 생성 요청에 실패했습니다.');
+    const b64 = data?.data?.[0]?.b64_json;
+    if (!b64) throw new Error('이미지 데이터를 받지 못했습니다.');
+    return {
+      enabled: true,
+      dataUrl: `data:image/png;base64,${b64}`,
+      model: IMAGE_MODEL,
+      error: null
+    };
+  } catch (error) {
+    console.error('[spouse image error]', error.message);
+    return { enabled: true, dataUrl: null, model: IMAGE_MODEL, error: error.message };
+  }
 }
 
 function randomId(bytes = 12) {
@@ -455,6 +490,7 @@ function normalizeFortuneInput(input = {}) {
     birthTimeUnknown: Boolean(input.birthTimeUnknown),
     birthPlace: safe(input.birthPlace, 80),
     relationshipStatus: safe(input.relationshipStatus, 40),
+    partnerGender: safe(input.partnerGender, 24),
     hasCrush: safe(input.hasCrush, 16),
     recentBreakup: safe(input.recentBreakup, 16)
   };
@@ -465,6 +501,51 @@ function inputHash(input) {
     .createHash('sha256')
     .update(JSON.stringify(normalizeFortuneInput(input)))
     .digest('hex');
+}
+
+function normalizeSpouseVisual(v = {}) {
+  return {
+    description: safe(v.description, 1800),
+    genderPresentation: safe(v.genderPresentation, 160),
+    ageRange: safe(v.ageRange, 120),
+    face: safe(v.face, 280),
+    eyes: safe(v.eyes, 220),
+    hair: safe(v.hair, 220),
+    build: safe(v.build, 220),
+    fashion: safe(v.fashion, 280),
+    expression: safe(v.expression, 220),
+    atmosphere: safe(v.atmosphere, 280),
+    caption: safe(v.caption, 420)
+  };
+}
+
+function spouseVisualHash(v) {
+  return crypto.createHash('sha256').update(JSON.stringify(normalizeSpouseVisual(v))).digest('hex');
+}
+
+function createSpouseImageToken(analysisId, input, spouseVisual) {
+  const payload = Buffer.from(JSON.stringify({
+    analysisId,
+    inputHash: inputHash(input),
+    spouseHash: spouseVisualHash(spouseVisual),
+    exp: Date.now() + TOKEN_TTL_MS
+  })).toString('base64url');
+  return `${payload}.${hmac(payload)}`;
+}
+
+function verifySpouseImageToken(token, analysisId, input, spouseVisual) {
+  try {
+    const [payload, signature] = String(token || '').split('.');
+    if (!payload || !signature) return false;
+    const expected = hmac(payload);
+    if (signature.length !== expected.length) return false;
+    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return false;
+    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    return data.analysisId === analysisId &&
+      data.inputHash === inputHash(input) &&
+      data.spouseHash === spouseVisualHash(spouseVisual) &&
+      Number(data.exp) > Date.now();
+  } catch { return false; }
 }
 
 function createAnalysisToken(analysisId, input) {
@@ -620,7 +701,9 @@ const server = http.createServer(async (req, res) => {
       demoPayment: PAYMENT_DEMO_MODE,
       freeTestMode: FREE_TEST_MODE,
       manseEngineReady: Boolean(manseryeok),
-      model: MODEL
+      model: MODEL,
+      imageModel: IMAGE_MODEL,
+      spouseImageEnabled: SPOUSE_IMAGE_ENABLED
     });
   }
 
@@ -637,18 +720,19 @@ const server = http.createServer(async (req, res) => {
 
       const manse = calculateManse(body);
       const isFreeFull = FREE_TEST_MODE;
-      const text = await callOpenAI(
+      const fortune = await callOpenAIJson(
         isFreeFull ? SYSTEM_PROMPT : PREVIEW_PROMPT,
         buildUserInput(body, manse),
-        isFreeFull ? 12000 : 2200,
+        isFreeFull ? 16000 : 2600,
         isFreeFull ? 'medium' : 'low'
       );
-
       const analysisId = randomId(10);
+      const imageToken = isFreeFull ? createSpouseImageToken(analysisId, body, fortune.spouseVisual) : null;
       return sendJson(res, 200, {
         analysisId,
         analysisToken: createAnalysisToken(analysisId, body),
-        text,
+        fortune,
+        imageToken,
         manse,
         fullAccess: isFreeFull
       });
@@ -748,6 +832,30 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  if (req.method === 'POST' && req.url === '/api/spouse-image') {
+    const ip = getIp(req);
+    if (!rateAllowed(ip, 3)) {
+      return sendJson(res, 429, { error: '이미지 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' });
+    }
+    try {
+      const body = await readJson(req);
+      const analysisId = safe(body.analysisId, 40);
+      const input = body.input || {};
+      const spouseVisual = body.spouseVisual || {};
+      if (!verifyAnalysisToken(body.analysisToken, analysisId, input)) {
+        return sendJson(res, 403, { error: '사주 분석 정보가 만료되었거나 올바르지 않습니다.' });
+      }
+      if (!verifySpouseImageToken(body.imageToken, analysisId, input, spouseVisual)) {
+        return sendJson(res, 403, { error: '배우자 이미지 생성 정보가 올바르지 않습니다.' });
+      }
+      const spouseImage = await generateSpouseImage({ spouseVisual }, input);
+      return sendJson(res, 200, { spouseImage });
+    } catch (error) {
+      console.error('[spouse image route error]', error.message);
+      return sendJson(res, 500, { error: error.message || '배우자 이미지 생성 중 오류가 발생했습니다.' });
+    }
+  }
+
   if (req.method === 'POST' && req.url === '/api/fortune/full') {
     const ip = getIp(req);
     if (!rateAllowed(ip, 3)) {
@@ -774,14 +882,15 @@ const server = http.createServer(async (req, res) => {
       if (validationError) return sendJson(res, 400, { error: validationError });
 
       const manse = calculateManse(input);
-      const text = await callOpenAI(
+      const fortune = await callOpenAIJson(
         SYSTEM_PROMPT,
         buildUserInput(input, manse),
-        12000,
+        16000,
         'medium'
       );
+      const imageToken = createSpouseImageToken(analysisId, input, fortune.spouseVisual);
 
-      return sendJson(res, 200, { text, manse });
+      return sendJson(res, 200, { fortune, imageToken, manse });
     } catch (error) {
       console.error('[full fortune error]', error.message);
       return sendJson(res, 500, {
@@ -794,6 +903,8 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, {
       ok: true,
       model: MODEL,
+      imageModel: IMAGE_MODEL,
+      spouseImageEnabled: SPOUSE_IMAGE_ENABLED,
       apiConfigured: Boolean(process.env.OPENAI_API_KEY),
       paymentConfigured: Boolean(TOSS_CLIENT_KEY && TOSS_SECRET_KEY),
       freeTestMode: FREE_TEST_MODE,
@@ -811,6 +922,7 @@ server.listen(PORT, () => {
   console.log(`Model: ${MODEL}`);
   console.log(`Manseryeok: ${manseryeok ? 'ready' : 'NOT installed'}`);
   console.log(`OpenAI: ${process.env.OPENAI_API_KEY ? 'configured' : 'NOT configured'}`);
+  console.log(`Spouse image: ${SPOUSE_IMAGE_ENABLED ? IMAGE_MODEL + ' / ' + SPOUSE_IMAGE_QUALITY : 'disabled'}`);
   console.log(
     `Toss Payments: ${TOSS_CLIENT_KEY && TOSS_SECRET_KEY ? 'configured' : 'NOT configured'} / demo=${PAYMENT_DEMO_MODE} / freeTest=${FREE_TEST_MODE}`
   );
