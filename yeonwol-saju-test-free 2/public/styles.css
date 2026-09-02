@@ -249,3 +249,37 @@ footer { max-width: 1160px; margin: 0 auto; padding: 38px 24px 48px; display: fl
   .paywall { padding: 26px 18px; border-radius: 18px; }
   .price-box strong { font-size: 23px; }
 }
+
+/* v3 — 점사 구어체 + 미래 배우자 이미지 */
+.spouse-visual-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(280px, .95fr);
+  gap: 26px;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 82% 15%, rgba(225,194,132,.11), transparent 32%),
+    linear-gradient(135deg, rgba(91,35,63,.2), rgba(10,6,12,.9));
+  border-color: rgba(225,194,132,.32);
+}
+.spouse-visual-copy { padding: 30px 10px 30px 30px; align-self: center; }
+.spouse-kicker { display: block; color: var(--gold-2); font-size: 10px; letter-spacing: .14em; margin-bottom: 10px; }
+.spouse-visual-copy h3 { font-size: clamp(24px, 3vw, 34px); margin-bottom: 16px; }
+.spouse-visual-copy p { font-size: 14px; line-height: 1.95; }
+.spouse-visual-copy small { display: block; margin-top: 19px; color: var(--soft); font-size: 10px; line-height: 1.65; }
+.spouse-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 18px; }
+.spouse-tags span { border: 1px solid rgba(225,194,132,.18); background: rgba(225,194,132,.045); color: #cdbdca; border-radius: 999px; padding: 7px 10px; font-size: 10px; line-height: 1.25; }
+.spouse-image-wrap { min-height: 440px; background: rgba(4,2,5,.5); overflow: hidden; position: relative; }
+.spouse-image-wrap::after { content: ""; position: absolute; inset: 0; box-shadow: inset 30px 0 50px rgba(12,7,14,.28); pointer-events: none; }
+.spouse-image-wrap img { width: 100%; height: 100%; min-height: 440px; display: block; object-fit: cover; }
+.spouse-image-placeholder { min-height: 440px; display: grid; place-items: center; align-content: center; gap: 18px; text-align: center; background: radial-gradient(circle, rgba(225,194,132,.09), transparent 54%); padding: 30px; }
+.spouse-image-placeholder > span { width: 78px; height: 78px; border-radius: 50%; border: 1px solid rgba(225,194,132,.3); display: grid; place-items: center; font-family: "Noto Serif KR", serif; color: var(--gold); font-size: 25px; }
+.spouse-image-placeholder p { color: var(--soft); line-height: 1.7; font-size: 12px; }
+
+@media (max-width: 760px) {
+  .spouse-visual-card { grid-template-columns: 1fr; }
+  .spouse-visual-copy { padding: 25px 20px 6px; }
+  .spouse-image-wrap, .spouse-image-wrap img, .spouse-image-placeholder { min-height: 390px; }
+  .spouse-image-wrap::after { box-shadow: inset 0 30px 45px rgba(12,7,14,.28); }
+}
