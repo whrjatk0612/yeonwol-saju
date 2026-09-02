@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#120b17" />
+  <meta name="description" content="만세력 기반 AI 연애사주. 무료 맛보기 후 전체 풀이를 열어보세요." />
+  <title>연월당 | 나의 인연을 읽다</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://js.tosspayments.com/v2/standard" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="연월당 홈">
+      <span class="brand-mark">緣</span>
+      <span><strong>연월당</strong><small>緣月堂 · LOVE SAJU</small></span>
+    </a>
+    <button class="ghost-btn" id="sampleTopBtn" type="button">맛보기 예시</button>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="eyebrow">만세력 원국을 계산한 뒤 풀어보는 인연의 흐름</div>
+      <h1>당신의 사랑은<br><em>어떤 인연</em>으로 들어올까</h1>
+      <p class="hero-copy">생년월일과 태어난 시간으로 사주 원국을 먼저 계산합니다. 무료 맛보기로 핵심 한 조각을 확인하고, 원한다면 전체 연애 점사를 열어볼 수 있어요.</p>
+      <div class="hero-actions">
+        <a href="#fortuneForm" class="primary-btn">무료 맛보기 보기 <span>↘</span></a>
+        <button id="sampleHeroBtn" class="text-btn" type="button">결과 화면 예시</button>
+      </div>
+      <div class="hero-stats" aria-label="분석 범위">
+        <div><b>四柱</b><span>만세력 원국</span></div>
+        <div><b>5년</b><span>연애 흐름</span></div>
+        <div><b>12개월</b><span>월별 운세</span></div>
+      </div>
+    </section>
+
+    <section class="ritual-card" id="fortuneForm">
+      <div class="section-heading">
+        <span class="seal">月</span>
+        <div>
+          <p>사주를 펼치기 위한 정보</p>
+          <h2>태어난 순간을 알려주세요</h2>
+        </div>
+      </div>
+
+      <form id="sajuForm">
+        <div class="grid two">
+          <fieldset class="field">
+            <legend>성별</legend>
+            <div class="segmented">
+              <label><input type="radio" name="gender" value="남성" required><span>남성</span></label>
+              <label><input type="radio" name="gender" value="여성"><span>여성</span></label>
+              <label><input type="radio" name="gender" value="기타/비공개"><span>기타</span></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="field">
+            <legend>양력 / 음력</legend>
+            <div class="segmented two-choice">
+              <label><input type="radio" name="calendarType" value="양력" checked required><span>양력</span></label>
+              <label><input type="radio" name="calendarType" value="음력"><span>음력</span></label>
+            </div>
+            <label class="inline-check hidden" id="leapMonthWrap"><input type="checkbox" name="isLeapMonth" id="isLeapMonth" /> <span>음력 윤달입니다</span></label>
+          </fieldset>
+        </div>
+
+        <div class="grid two">
+          <label class="field">생년월일
+            <input type="date" name="birthDate" min="1800-01-01" max="2100-12-31" required />
+          </label>
+          <label class="field">출생지역
+            <input type="text" name="birthPlace" maxlength="80" placeholder="예: 서울, 대한민국" required />
+            <small>서울·수원·부산 등 주요 국내 도시는 진태양시 경도 보정을 적용할 수 있습니다.</small>
+          </label>
+        </div>
+
+        <div class="grid two">
+          <label class="field">출생시간
+            <input type="time" name="birthTime" id="birthTime" />
+            <span class="inline-check"><input type="checkbox" name="birthTimeUnknown" id="birthTimeUnknown" /> <span>태어난 시간을 몰라요</span></span>
+          </label>
+          <label class="field">현재 연애상태 <span class="optional">선택</span>
+            <select name="relationshipStatus">
+              <option value="">선택하지 않음</option>
+              <option>솔로</option>
+              <option>썸</option>
+              <option>연애 중</option>
+              <option>이별 후</option>
+              <option>기혼</option>
+              <option>복잡한 관계</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="grid two">
+          <label class="field">현재 마음에 있는 사람 <span class="optional">선택</span>
+            <select name="hasCrush">
+              <option value="">선택하지 않음</option>
+              <option>없음</option>
+              <option>있음</option>
+              <option>애매함</option>
+            </select>
+          </label>
+          <label class="field">최근 이별 여부 <span class="optional">선택</span>
+            <select name="recentBreakup">
+              <option value="">선택하지 않음</option>
+              <option>해당 없음</option>
+              <option>3개월 이내</option>
+              <option>6개월 이내</option>
+              <option>1년 이내</option>
+              <option>1년 이상</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="privacy-note">
+          <span>◌</span>
+          <p>현재 스타터는 생년월일 정보를 서버 DB에 저장하지 않고, 브라우저에 결제 후 결과 복원을 위한 정보만 임시 저장합니다. 상용 운영 전 개인정보 처리방침과 보관·삭제 정책을 추가하세요.</p>
+        </div>
+
+        <button class="submit-btn" type="submit" id="submitBtn">
+          <span class="btn-label">전체 연애사주 무료로 보기 (테스트)</span>
+          <span class="btn-arrow">✦</span>
+        </button>
+        <p class="fineprint">사주명리학적 해석을 바탕으로 한 재미·자기이해용 콘텐츠이며 미래를 확정적으로 예측하지 않습니다.</p>
+      </form>
+    </section>
+
+    <section class="loading-panel hidden" id="loadingPanel" aria-live="polite">
+      <div class="orb"><span>緣</span></div>
+      <h2 id="loadingTitle">인연의 흐름을 살펴보고 있습니다</h2>
+      <p id="loadingText">만세력 원국을 계산하는 중...</p>
+      <div class="progress"><i id="progressBar"></i></div>
+    </section>
+
+    <section class="results hidden" id="resultsSection">
+      <div class="results-head">
+        <div>
+          <span class="eyebrow" id="resultEyebrow">FREE PREVIEW</span>
+          <h2 id="resultTitle">당신의 인연, 먼저 조금만 보여드릴게요</h2>
+        </div>
+        <button id="restartBtn" class="ghost-btn" type="button">다시 보기</button>
+      </div>
+
+      <div class="manse-card hidden" id="manseCard">
+        <div class="manse-head"><span>命</span><div><small>만세력 계산 원국</small><strong id="mansePillars">-</strong></div></div>
+        <p id="manseMeta"></p>
+      </div>
+
+      <div class="result-highlight" id="resultHighlight"></div>
+      <div class="result-grid" id="resultGrid"></div>
+
+      <section class="paywall hidden" id="paywallSection">
+        <div class="paywall-glow"></div>
+        <div class="paywall-copy">
+          <span class="eyebrow">FULL READING</span>
+          <h2>여기서부터는 당신만의<br>전체 인연 점사입니다</h2>
+          <p>미래 연인의 구체적인 성향부터 만남, 감정선, 결혼 흐름, 향후 5년·12개월까지 이어서 확인할 수 있어요.</p>
+        </div>
+
+        <div class="locked-list">
+          <div><span>01</span><p><b>미래 연인 상세</b><small>외모 분위기 · 성격 · 직업 · 연락 스타일</small></p><i>🔒</i></div>
+          <div><span>02</span><p><b>첫 만남과 감정선</b><small>만남 경로 · 누가 먼저 빠지는지 · 고백</small></p><i>🔒</i></div>
+          <div><span>03</span><p><b>장기 관계와 결혼</b><small>갈등 · 재회 · 배우자 · 결혼 후 모습</small></p><i>🔒</i></div>
+          <div><span>04</span><p><b>시기 분석</b><small>앞으로 5년 · 12개월 · 중요한 연애 나이</small></p><i>🔒</i></div>
+        </div>
+
+        <div class="price-box">
+          <span>전체 풀이 1회</span>
+          <strong id="priceText">4,900원</strong>
+          <small>결제 완료 후 즉시 전체 결과 생성</small>
+        </div>
+
+        <div id="paymentArea" class="payment-area hidden">
+          <div id="payment-method"></div>
+          <div id="agreement"></div>
+          <button class="pay-btn" id="payBtn" type="button" disabled>결제하고 전체 풀이 열기</button>
+        </div>
+
+        <div class="payment-message" id="paymentMessage"></div>
+        <button class="demo-pay-btn hidden" id="demoUnlockBtn" type="button">개발 모드: 결제 완료 처리</button>
+        <p class="pay-note">실서비스에서는 상품명·가격·환불정책·사업자 정보·개인정보 처리방침을 실제 운영 정책에 맞게 표시해야 합니다.</p>
+      </section>
+
+      <p class="result-disclaimer">이 결과는 전통 사주명리의 상징을 활용한 콘텐츠입니다. 실제 미래나 특정 상대의 마음을 확정적으로 판단하는 근거로 사용하지 마세요.</p>
+    </section>
+
+    <section class="feature-strip">
+      <article><span>01</span><h3>원국부터 계산</h3><p>연·월·일·시주와 십신·공망·대운 데이터를 먼저 계산한 뒤 AI가 풀이합니다.</p></article>
+      <article><span>02</span><h3>테스트 무료 공개</h3><p>테스트 모드에서는 결제 없이 전체 연애사주를 바로 확인할 수 있습니다.</p></article>
+      <article><span>03</span><h3>결제 기능 보존</h3><p>테스트가 끝나면 FREE_TEST_MODE=false로 바꾸고 기존 결제 구조를 다시 사용할 수 있습니다.</p></article>
+    </section>
+  </main>
+
+  <footer>
+    <span class="footer-brand">緣月堂 · YEONWOLDANG</span>
+    <span>사주명리 기반 엔터테인먼트 콘텐츠</span>
+  </footer>
+</body>
+</html>

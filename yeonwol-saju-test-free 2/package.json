@@ -1,0 +1,16 @@
+{
+  "name": "yeonwol-love-saju",
+  "version": "2.0.0",
+  "private": true,
+  "description": "만세력 + AI 연애사주 + 무료 맛보기 + 토스페이먼츠 잠금해제",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "manseryeok": "^2.0.0"
+  }
+}
