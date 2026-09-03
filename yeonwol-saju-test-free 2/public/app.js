@@ -1,4 +1,4 @@
-console.info('[YEONWOL] app.js v4.3 history loaded');
+console.info('[YEONWOL] app.js v4.5 main character loaded');
 window.addEventListener('error', (e) => console.error('[YEONWOL client error]', e.error || e.message));
 const form = document.getElementById('sajuForm');
 const loadingPanel = document.getElementById('loadingPanel');
@@ -32,6 +32,17 @@ const historyList = document.getElementById('historyList');
 const historyEmpty = document.getElementById('historyEmpty');
 const historyCloseBtn = document.getElementById('historyCloseBtn');
 const historyClearBtn = document.getElementById('historyClearBtn');
+const fortuneGate = document.getElementById('fortuneGate');
+const fortuneFormSection = document.getElementById('fortuneForm');
+const enterFortuneBtn = document.getElementById('enterFortuneBtn');
+const previewCtaBtn = document.getElementById('previewCtaBtn');
+const closingCtaBtn = document.getElementById('closingCtaBtn');
+const scrollStoryBtn = document.getElementById('scrollStoryBtn');
+const storySection = document.getElementById('storySection');
+const introVideo = document.getElementById('introVideo');
+const introCaptionText = document.getElementById('introCaptionText');
+const introSoundBtn = document.getElementById('introSoundBtn');
+const introSoundLabel = document.getElementById('introSoundLabel');
 
 const state = {
   config: null,
@@ -83,6 +94,7 @@ const sampleFortune = {
 
 
 init();
+initLandingIntro();
 
 async function init() {
   try {
@@ -111,6 +123,163 @@ function updateCalendarUI() {
   const type = document.querySelector('input[name="calendarType"]:checked')?.value;
   leapMonthWrap.classList.toggle('hidden', type !== '음력');
   if (type !== '음력') isLeapMonth.checked = false;
+}
+
+
+const introVoiceLines = [
+  '잠깐만. 네 사주부터 좀 볼게.',
+  '음… 여기 사람 하나가 들어오는 자리가 있네.',
+  '그냥 스쳐 지나가는 인연으로만 보이진 않아.',
+  '태어난 때를 알려줘. 어디서 들어오는 사람인지부터 보자.'
+];
+
+const introCaptionCues = [
+  { at: 0, text: '…' },
+  { at: 1.8, text: introVoiceLines[0] },
+  { at: 4.2, text: introVoiceLines[1] },
+  { at: 6.9, text: introVoiceLines[2] },
+  { at: 9.3, text: introVoiceLines[3] }
+];
+
+let introVoiceTimer = null;
+
+function initLandingIntro() {
+  const ctas = [enterFortuneBtn, previewCtaBtn, closingCtaBtn].filter(Boolean);
+  ctas.forEach((button) => button.addEventListener('click', () => revealFortuneForm(true)));
+
+  scrollStoryBtn?.addEventListener('click', () => {
+    storySection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  if (window.location.hash === '#fortuneForm') revealFortuneForm(false);
+
+  if (introVideo && introCaptionText) {
+    const updateCaption = () => {
+      const current = introVideo.currentTime || 0;
+      let index = 0;
+      for (let i = 0; i < introCaptionCues.length; i += 1) {
+        if (current >= introCaptionCues[i].at) index = i;
+      }
+      if (introCaptionText.dataset.index !== String(index)) {
+        introCaptionText.dataset.index = String(index);
+        introCaptionText.classList.remove('caption-enter');
+        void introCaptionText.offsetWidth;
+        introCaptionText.textContent = introCaptionCues[index].text;
+        introCaptionText.classList.add('caption-enter');
+      }
+    };
+    introVideo.addEventListener('timeupdate', updateCaption);
+    introVideo.addEventListener('loadedmetadata', updateCaption);
+    introVideo.addEventListener('ended', () => {
+      introCaptionText.textContent = introVoiceLines[introVoiceLines.length - 1];
+      introCaptionText.dataset.index = String(introCaptionCues.length - 1);
+    });
+    introVideo.addEventListener('error', () => {
+      document.querySelector('.guide-media')?.classList.add('video-fallback');
+    });
+    introVideo.play().catch(() => {});
+  }
+
+  introSoundBtn?.addEventListener('click', toggleIntroVoice);
+  initScrollReveals();
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && 'speechSynthesis' in window) {
+      if (introVoiceTimer) {
+        window.clearTimeout(introVoiceTimer);
+        introVoiceTimer = null;
+      }
+      window.speechSynthesis.cancel();
+      setVoiceButton(false, '목소리 듣기');
+    }
+  });
+}
+
+
+function initScrollReveals() {
+  const items = document.querySelectorAll('.landing-heading, .reading-points article, .preview-copy, .preview-paper, .closing-cta');
+  if (!items.length) return;
+  if (!('IntersectionObserver' in window)) {
+    items.forEach((item) => item.classList.add('is-visible'));
+    return;
+  }
+  items.forEach((item, index) => {
+    item.classList.add('reveal-pending');
+    item.style.setProperty('--reveal-delay', `${Math.min(index % 6, 5) * 55}ms`);
+  });
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-visible');
+      observer.unobserve(entry.target);
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+  items.forEach((item) => observer.observe(item));
+}
+
+function revealFortuneForm(shouldScroll = true) {
+  if (!fortuneGate || !fortuneFormSection) return;
+  fortuneGate.classList.remove('is-closed');
+  fortuneGate.classList.add('is-open');
+  fortuneGate.setAttribute('aria-hidden', 'false');
+  if (shouldScroll) {
+    window.setTimeout(() => {
+      fortuneFormSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 180);
+  }
+}
+
+function setVoiceButton(active, label) {
+  if (!introSoundBtn) return;
+  introSoundBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  introSoundBtn.classList.toggle('is-speaking', active);
+  if (introSoundLabel) introSoundLabel.textContent = label || (active ? '멈추기' : '목소리 듣기');
+}
+
+function toggleIntroVoice() {
+  if (!('speechSynthesis' in window)) {
+    alert('이 브라우저에서는 음성 재생을 지원하지 않습니다.');
+    return;
+  }
+
+  if (introVoiceTimer || window.speechSynthesis.speaking) {
+    if (introVoiceTimer) {
+      window.clearTimeout(introVoiceTimer);
+      introVoiceTimer = null;
+    }
+    window.speechSynthesis.cancel();
+    setVoiceButton(false, '다시 듣기');
+    return;
+  }
+
+  introVideo?.pause();
+  if (introVideo) {
+    try { introVideo.currentTime = 0; } catch {}
+    introVideo.play().catch(() => {});
+  }
+
+  setVoiceButton(true, '목소리 준비 중');
+  introVoiceTimer = window.setTimeout(() => {
+    introVoiceTimer = null;
+    const utterance = new SpeechSynthesisUtterance(introVoiceLines.join(' '));
+    utterance.lang = 'ko-KR';
+    utterance.rate = 0.82;
+    utterance.pitch = 0.86;
+    utterance.volume = 1;
+
+    const voices = window.speechSynthesis.getVoices();
+    const koreanVoices = voices.filter((voice) => /^ko[-_]/i.test(voice.lang || ''));
+    const preferred = koreanVoices.find((voice) => /female|여성|yuna|sora|sunhi|heami|seoyeon/i.test(`${voice.name} ${voice.voiceURI}`))
+      || koreanVoices[0]
+      || voices.find((voice) => /^ko[-_]/i.test(voice.lang || ''));
+    if (preferred) utterance.voice = preferred;
+
+    utterance.onstart = () => setVoiceButton(true, '목소리 멈추기');
+    utterance.onend = () => setVoiceButton(false, '다시 듣기');
+    utterance.onerror = () => setVoiceButton(false, '다시 듣기');
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  }, 1700);
 }
 
 async function runFortune(event) {
@@ -187,7 +356,7 @@ for (const id of ['sampleTopBtn', 'sampleHeroBtn']) {
 
 document.getElementById('restartBtn').addEventListener('click', () => {
   resultsSection.classList.add('hidden');
-  document.getElementById('fortuneForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  revealFortuneForm(true);
 });
 
 payBtn.addEventListener('click', startPayment);
