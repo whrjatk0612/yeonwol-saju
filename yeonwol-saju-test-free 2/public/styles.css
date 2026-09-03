@@ -559,3 +559,57 @@ footer { max-width: 1160px; margin: 0 auto; padding: 38px 24px 48px; display: fl
   .reading-closing { padding: 32px 24px; }
   .reading-closing .chapter-body { margin-left: 0; }
 }
+
+
+/* V4.3 · 내 점사 보관함 */
+.header-actions { display:flex; align-items:center; gap:9px; }
+.history-trigger { position:relative; }
+.history-trigger #historyCount {
+  display:inline-grid; place-items:center; min-width:18px; height:18px; margin-left:5px;
+  padding:0 5px; border-radius:999px; background:rgba(225,194,132,.15); color:var(--gold-2);
+  font-size:9px; line-height:1;
+}
+.history-trigger #historyCount:empty { display:none; }
+body.modal-open { overflow:hidden; }
+.history-modal {
+  position:fixed; inset:0; z-index:1000; display:grid; place-items:center; padding:22px;
+  background:rgba(3,2,5,.78); backdrop-filter:blur(12px);
+}
+.history-panel {
+  width:min(760px,100%); max-height:min(82vh,840px); overflow:auto;
+  border:1px solid rgba(225,194,132,.22); border-radius:26px;
+  background:linear-gradient(160deg,rgba(29,15,32,.98),rgba(8,5,10,.99));
+  box-shadow:0 28px 90px rgba(0,0,0,.58); padding:28px;
+}
+.history-panel-head { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; padding-bottom:22px; border-bottom:1px solid rgba(225,194,132,.13); }
+.history-panel-head > div > span { color:var(--gold-2); font-size:9px; letter-spacing:.18em; }
+.history-panel-head h2 { margin:7px 0 7px; color:#f4e7d2; font-family:"Noto Serif KR",serif; font-size:28px; font-weight:500; }
+.history-panel-head p { margin:0; color:var(--soft); font-size:11px; line-height:1.7; }
+.history-close { width:40px; height:40px; flex:0 0 40px; border-radius:50%; border:1px solid rgba(225,194,132,.19); background:transparent; color:#cdbec9; font-size:23px; cursor:pointer; }
+.history-list { display:grid; gap:11px; margin-top:18px; }
+.history-item { display:flex; justify-content:space-between; align-items:center; gap:18px; padding:18px; border:1px solid rgba(225,194,132,.12); border-radius:17px; background:rgba(255,255,255,.018); }
+.history-item-copy { min-width:0; }
+.history-item-copy > span { color:var(--gold-2); font-family:"Noto Serif KR",serif; font-size:9px; letter-spacing:.11em; }
+.history-item-copy h3 { margin:6px 0 5px; color:#eee1d9; font-family:"Noto Serif KR",serif; font-size:17px; font-weight:500; }
+.history-item-copy p { margin:0; color:#91838f; font-size:10px; line-height:1.6; }
+.history-item-actions { display:flex; flex:0 0 auto; gap:7px; }
+.history-item-actions button { border:1px solid rgba(225,194,132,.19); border-radius:999px; background:rgba(225,194,132,.04); color:#d8c8d1; padding:8px 12px; font-size:10px; cursor:pointer; }
+.history-item-actions button:hover { border-color:rgba(225,194,132,.42); }
+.history-item-actions .danger { color:#bdaab4; border-color:rgba(190,120,145,.14); }
+.history-empty { margin-top:18px; padding:36px 20px; text-align:center; border:1px dashed rgba(225,194,132,.16); border-radius:17px; }
+.history-empty strong { color:#e7d8ca; font-family:"Noto Serif KR",serif; font-weight:500; }
+.history-empty p { margin:8px 0 0; color:#8f818d; font-size:11px; }
+.history-panel-foot { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-top:20px; padding-top:18px; border-top:1px solid rgba(225,194,132,.12); }
+.history-panel-foot p { margin:0; color:#776b78; font-size:9.5px; line-height:1.65; max-width:510px; }
+.history-clear { flex:0 0 auto; border:0; background:transparent; color:#a8929e; font-size:10px; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+@media (max-width:760px) {
+  .site-header { gap:10px; }
+  .header-actions { gap:5px; }
+  .header-actions .ghost-btn { padding:8px 9px; font-size:9px; }
+  .history-modal { padding:10px; align-items:end; }
+  .history-panel { width:100%; max-height:88vh; border-radius:22px 22px 12px 12px; padding:20px 16px; }
+  .history-item { align-items:flex-start; flex-direction:column; }
+  .history-item-actions { width:100%; }
+  .history-item-actions button { flex:1; }
+  .history-panel-foot { align-items:flex-start; flex-direction:column; }
+}
