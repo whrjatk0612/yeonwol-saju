@@ -1,4 +1,4 @@
-console.info('[YEONWOL] app.js v4.1.1 loaded');
+console.info('[YEONWOL] app.js v4.3 history loaded');
 window.addEventListener('error', (e) => console.error('[YEONWOL client error]', e.error || e.message));
 const form = document.getElementById('sajuForm');
 const loadingPanel = document.getElementById('loadingPanel');
@@ -25,6 +25,13 @@ const priceText = document.getElementById('priceText');
 const manseCard = document.getElementById('manseCard');
 const mansePillars = document.getElementById('mansePillars');
 const manseMeta = document.getElementById('manseMeta');
+const historyBtn = document.getElementById('historyBtn');
+const historyCount = document.getElementById('historyCount');
+const historyModal = document.getElementById('historyModal');
+const historyList = document.getElementById('historyList');
+const historyEmpty = document.getElementById('historyEmpty');
+const historyCloseBtn = document.getElementById('historyCloseBtn');
+const historyClearBtn = document.getElementById('historyClearBtn');
 
 const state = {
   config: null,
@@ -35,7 +42,8 @@ const state = {
   paymentReady: false,
   mode: 'preview',
   imageToken: null,
-  currentFortune: null
+  currentFortune: null,
+  currentManse: null
 };
 
 const previewLoadingSteps = [
@@ -87,6 +95,8 @@ async function init() {
     if (submitLabel) submitLabel.textContent = '전체 연애사주 무료로 보기 (테스트)';
   }
   updateCalendarUI();
+  initHistoryUI();
+  await refreshHistoryCount();
   await restorePaidAnalysis();
 }
 
@@ -140,6 +150,7 @@ async function runFortune(event) {
       localStorage.setItem(storageKey(state.analysisId, 'full'), JSON.stringify(data.fortune));
       renderResult(data.fortune, 'full', data.imageToken ? { enabled: true, loading: true } : null);
       paywallSection.classList.add('hidden');
+      await saveCurrentReading();
       if (data.imageToken) loadSpouseImage(data.imageToken, data.fortune?.spouseVisual);
     } else {
       renderResult(data.fortune, 'preview', null);
@@ -318,6 +329,7 @@ async function loadFullFortune(unlockToken) {
     if (state.imageToken) localStorage.setItem(storageKey(state.analysisId, 'imageToken'), state.imageToken);
     renderManse(data.manse);
     renderResult(data.fortune, 'full', data.imageToken ? { enabled: true, loading: true } : null);
+    await saveCurrentReading();
     if (data.imageToken) loadSpouseImage(data.imageToken, data.fortune?.spouseVisual);
     const url = new URL(window.location.href);
     url.searchParams.set('analysisId', state.analysisId);
@@ -357,6 +369,200 @@ function getCachedSpouseImage(analysisId) {
 
 function storageKey(analysisId, type) {
   return `yeonwol:${analysisId}:${type}`;
+}
+
+
+const HISTORY_DB_NAME = 'yeonwol-reading-history';
+const HISTORY_DB_VERSION = 1;
+const HISTORY_STORE = 'readings';
+let historyDbPromise = null;
+
+function openHistoryDB() {
+  if (!('indexedDB' in window)) return Promise.reject(new Error('이 브라우저에서는 점사 보관함을 사용할 수 없습니다.'));
+  if (historyDbPromise) return historyDbPromise;
+  historyDbPromise = new Promise((resolve, reject) => {
+    const request = indexedDB.open(HISTORY_DB_NAME, HISTORY_DB_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(HISTORY_STORE)) {
+        const store = db.createObjectStore(HISTORY_STORE, { keyPath: 'analysisId' });
+        store.createIndex('createdAt', 'createdAt');
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error('점사 보관함을 열지 못했습니다.'));
+  });
+  return historyDbPromise;
+}
+
+async function historyRequest(mode, handler) {
+  const db = await openHistoryDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(HISTORY_STORE, mode);
+    const store = tx.objectStore(HISTORY_STORE);
+    let request;
+    try { request = handler(store); } catch (error) { reject(error); return; }
+    tx.oncomplete = () => resolve(request?.result);
+    tx.onerror = () => reject(tx.error || request?.error || new Error('점사 보관함 처리에 실패했습니다.'));
+    tx.onabort = () => reject(tx.error || new Error('점사 보관함 처리가 중단되었습니다.'));
+  });
+}
+
+async function getSavedReadings() {
+  const rows = await historyRequest('readonly', (store) => store.getAll());
+  return (rows || []).sort((a, b) => Number(b.updatedAt || b.createdAt || 0) - Number(a.updatedAt || a.createdAt || 0));
+}
+
+async function getSavedReading(analysisId) {
+  return historyRequest('readonly', (store) => store.get(analysisId));
+}
+
+async function putSavedReading(record) {
+  await historyRequest('readwrite', (store) => store.put(record));
+}
+
+async function deleteSavedReading(analysisId) {
+  await historyRequest('readwrite', (store) => store.delete(analysisId));
+}
+
+async function clearSavedReadings() {
+  await historyRequest('readwrite', (store) => store.clear());
+}
+
+async function saveCurrentReading(spouseImageDataUrl) {
+  if (state.mode !== 'full' || !state.analysisId || !state.currentFortune || !state.input) return;
+  try {
+    const existing = await getSavedReading(state.analysisId);
+    const cachedImage = spouseImageDataUrl || getCachedSpouseImage(state.analysisId)?.dataUrl || existing?.spouseImageDataUrl || null;
+    const now = Date.now();
+    await putSavedReading({
+      analysisId: state.analysisId,
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+      input: state.input,
+      manse: state.currentManse || existing?.manse || null,
+      fortune: state.currentFortune,
+      spouseImageDataUrl: cachedImage
+    });
+    await refreshHistoryCount();
+  } catch (error) {
+    console.warn('[YEONWOL history save]', error);
+  }
+}
+
+function formatSavedDate(timestamp) {
+  try {
+    return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(timestamp));
+  } catch { return ''; }
+}
+
+function formatBirthDate(value) {
+  if (!value) return '생년월일 미상';
+  const [y, m, d] = String(value).split('-');
+  return [y, m, d].filter(Boolean).join('.');
+}
+
+function initHistoryUI() {
+  if (!historyBtn || !historyModal) return;
+  historyBtn.addEventListener('click', async () => {
+    historyModal.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+    await renderHistoryList();
+  });
+  historyCloseBtn?.addEventListener('click', closeHistoryModal);
+  historyModal.addEventListener('click', (event) => {
+    if (event.target === historyModal) closeHistoryModal();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !historyModal.classList.contains('hidden')) closeHistoryModal();
+  });
+  historyClearBtn?.addEventListener('click', async () => {
+    const rows = await getSavedReadings();
+    if (!rows.length) return;
+    if (!confirm('이 브라우저에 저장된 점사 기록을 모두 삭제할까요? 삭제한 기록은 복구할 수 없습니다.')) return;
+    await clearSavedReadings();
+    await renderHistoryList();
+    await refreshHistoryCount();
+  });
+  historyList?.addEventListener('click', async (event) => {
+    const button = event.target.closest('button[data-history-action]');
+    if (!button) return;
+    const analysisId = button.dataset.analysisId;
+    if (!analysisId) return;
+    if (button.dataset.historyAction === 'open') {
+      const record = await getSavedReading(analysisId);
+      if (record) openSavedReading(record);
+    }
+    if (button.dataset.historyAction === 'delete') {
+      if (!confirm('이 점사 기록을 삭제할까요?')) return;
+      await deleteSavedReading(analysisId);
+      await renderHistoryList();
+      await refreshHistoryCount();
+    }
+  });
+}
+
+function closeHistoryModal() {
+  historyModal?.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+}
+
+async function refreshHistoryCount() {
+  if (!historyCount) return;
+  try {
+    const rows = await getSavedReadings();
+    historyCount.textContent = rows.length ? String(rows.length) : '';
+    historyBtn?.classList.toggle('has-history', rows.length > 0);
+  } catch {
+    historyCount.textContent = '';
+  }
+}
+
+async function renderHistoryList() {
+  if (!historyList || !historyEmpty) return;
+  historyList.innerHTML = '';
+  try {
+    const rows = await getSavedReadings();
+    historyEmpty.classList.toggle('hidden', rows.length > 0);
+    historyClearBtn?.classList.toggle('hidden', rows.length === 0);
+    for (const record of rows) {
+      const input = record.input || {};
+      const item = document.createElement('article');
+      item.className = 'history-item';
+      const title = `${formatBirthDate(input.birthDate)} · ${input.gender || '성별 미상'}`;
+      const meta = [input.birthPlace, input.relationshipStatus, formatSavedDate(record.updatedAt || record.createdAt)].filter(Boolean).join(' · ');
+      item.innerHTML = `
+        <div class="history-item-copy">
+          <span>저장된 인연 점사</span>
+          <h3>${escapeHtml(title)}</h3>
+          <p>${escapeHtml(meta)}</p>
+        </div>
+        <div class="history-item-actions">
+          <button type="button" data-history-action="open" data-analysis-id="${escapeHtml(record.analysisId)}">다시 보기</button>
+          <button type="button" class="danger" data-history-action="delete" data-analysis-id="${escapeHtml(record.analysisId)}">삭제</button>
+        </div>`;
+      historyList.appendChild(item);
+    }
+  } catch (error) {
+    historyEmpty.classList.remove('hidden');
+    historyEmpty.innerHTML = `<strong>보관함을 열지 못했습니다.</strong><p>${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function openSavedReading(record) {
+  state.analysisId = record.analysisId;
+  state.analysisToken = null;
+  state.imageToken = null;
+  state.input = record.input || null;
+  state.currentFortune = record.fortune || null;
+  state.currentManse = record.manse || null;
+  renderManse(record.manse);
+  renderResult(record.fortune, 'full', record.spouseImageDataUrl ? { enabled: true, dataUrl: record.spouseImageDataUrl } : null);
+  closeHistoryModal();
+  const url = new URL(window.location.href);
+  url.searchParams.delete('analysisId');
+  url.searchParams.delete('paid');
+  history.replaceState(null, '', `${url.pathname}#resultsSection`);
 }
 
 let loadingTimer;
@@ -582,6 +788,7 @@ function updateSpouseImage(spouseImage) {
   if (spouseImage?.dataUrl) {
     media.className = 'spouse-image-wrap';
     media.innerHTML = `<img src="${spouseImage.dataUrl}" alt="사주에서 묘사된 미래 인연의 분위기를 시각화한 생성 이미지">`;
+    void saveCurrentReading(spouseImage.dataUrl);
   } else {
     media.className = 'spouse-image-placeholder';
     media.innerHTML = '<span>緣</span><p>이번에는 그림을 만들지 못했어.<br>위에 적힌 사람의 인상은 그대로 보면 돼.</p>';
@@ -590,6 +797,7 @@ function updateSpouseImage(spouseImage) {
 }
 
 function renderManse(manse) {
+  state.currentManse = manse || null;
   if (!manse?.available) {
     manseCard.classList.add('hidden');
     return;
