@@ -680,7 +680,7 @@ body.modal-open { overflow:hidden; }
   object-position: center center;
   filter: saturate(.91) contrast(1.02) brightness(.91);
 }
-.video-fallback .guide-video { background: url('/assets/yeonwol-guide.jpg') center/cover no-repeat; }
+.video-fallback .guide-video { background: url('/yeonwol-guide.jpg') center/cover no-repeat; }
 .guide-vignette {
   position: absolute;
   z-index: 3;
