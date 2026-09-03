@@ -156,6 +156,7 @@ const BLUEPRINT_PROMPT = `
 - timingFocus는 현재 기준 날짜와 대운 데이터를 함께 보고, 강한 시기와 조용한 시기를 구분한다. 정확한 사건 날짜를 예언하지 않는다.
 - avoidGenericClaims에는 이 사주에서 근거가 약하거나 너무 흔해서 이번 결과에서 피해야 할 문장을 적는다.
 - weakOrUnavailable에는 출생시간 미상, 근거 부족, 특정 분야 약함 등 이번 풀이에서 세게 말하면 안 되는 부분을 적는다.
+- 설계표는 짧고 밀도 있게 쓴다. evidence의 observation과 implication은 각각 한 문장, distinctivePatterns의 behaviorSequence는 1~2문장, sectionPlan의 각 문자열도 1~2문장을 넘기지 않는다. 같은 근거를 장황하게 다시 설명하지 않는다.
 
 출력은 오직 내부 설계 JSON이어야 한다. 사용자에게 직접 말하는 말투나 무당식 대사는 쓰지 않는다.
 `;
@@ -509,8 +510,8 @@ async function generatePersonalizedFortune(body, manse) {
   const blueprint = await callOpenAIJson(
     BLUEPRINT_PROMPT,
     buildUserInput(body, manse),
-    4200,
-    'medium',
+    8200,
+    'low',
     BLUEPRINT_SCHEMA,
     'yeonwol_love_saju_blueprint'
   );
@@ -518,7 +519,7 @@ async function generatePersonalizedFortune(body, manse) {
   const fortune = await callOpenAIJson(
     SYSTEM_PROMPT,
     buildNarrativeInput(body, manse, blueprint),
-    16000,
+    18000,
     'medium',
     FORTUNE_SCHEMA,
     'yeonwol_love_saju_v42'
@@ -531,47 +532,97 @@ async function callOpenAIJson(instructions, input, maxOutputTokens, effort, sche
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY가 설정되지 않았습니다.');
 
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      instructions,
-      input,
-      reasoning: { effort },
-      max_output_tokens: maxOutputTokens,
-      text: {
-        format: {
-          type: 'json_schema',
-          name: schemaName,
-          strict: true,
-          schema
+  const parseStructuredJson = (raw) => {
+    const text = String(raw || '').trim();
+    if (!text) return null;
+
+    try { return JSON.parse(text); } catch {}
+
+    // Defensive fallback: structured output should be plain JSON, but strip code fences
+    // if a model/provider ever wraps it despite the schema request.
+    const unfenced = text
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```$/i, '')
+      .trim();
+    try { return JSON.parse(unfenced); } catch {}
+
+    const first = unfenced.indexOf('{');
+    const last = unfenced.lastIndexOf('}');
+    if (first >= 0 && last > first) {
+      try { return JSON.parse(unfenced.slice(first, last + 1)); } catch {}
+    }
+    return null;
+  };
+
+  const runAttempt = async (attempt, tokenBudget, attemptEffort) => {
+    const response = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        instructions,
+        input,
+        reasoning: { effort: attemptEffort },
+        max_output_tokens: tokenBudget,
+        text: {
+          format: {
+            type: 'json_schema',
+            name: schemaName,
+            strict: true,
+            schema
+          }
+        }
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.error?.message || 'AI 점사 요청에 실패했습니다.');
+
+    let raw = typeof data.output_text === 'string' ? data.output_text : '';
+    let refusal = '';
+    if (!raw) {
+      const chunks = [];
+      for (const item of data.output || []) {
+        for (const content of item.content || []) {
+          if (content.type === 'output_text' && content.text) chunks.push(content.text);
+          if (content.type === 'refusal' && content.refusal) refusal += content.refusal;
         }
       }
-    })
-  });
-
-  const data = await response.json();
-  if (!response.ok) throw new Error(data?.error?.message || 'AI 점사 요청에 실패했습니다.');
-  let raw = typeof data.output_text === 'string' ? data.output_text : '';
-  if (!raw) {
-    const chunks = [];
-    for (const item of data.output || []) {
-      for (const content of item.content || []) {
-        if (content.type === 'output_text' && content.text) chunks.push(content.text);
-      }
+      raw = chunks.join('');
     }
-    raw = chunks.join('');
-  }
-  if (!raw.trim()) throw new Error('점사 결과를 읽을 수 없습니다.');
-  try {
-    return JSON.parse(raw);
-  } catch {
-    throw new Error('점사 결과 형식을 읽지 못했습니다. 다시 시도해주세요.');
-  }
+
+    const incompleteReason = data?.incomplete_details?.reason || '';
+    console.log(`[ai:${schemaName}] attempt=${attempt} status=${data?.status || 'unknown'} chars=${raw.length} incomplete=${incompleteReason || 'none'}`);
+
+    if (refusal) {
+      throw new Error('점사 생성 요청이 처리되지 않았습니다. 입력 내용을 확인하고 다시 시도해주세요.');
+    }
+
+    const parsed = parseStructuredJson(raw);
+    if (parsed) return parsed;
+
+    const retryable = data?.status === 'incomplete' || incompleteReason === 'max_output_tokens' || raw.length > 0;
+    if (attempt === 1 && retryable) return null;
+
+    if (!raw.trim()) throw new Error('점사 결과를 읽을 수 없습니다.');
+    throw new Error('점사 결과 JSON이 완성되지 않았습니다. 다시 시도해주세요.');
+  };
+
+  let parsed = await runAttempt(1, maxOutputTokens, effort);
+  if (parsed) return parsed;
+
+  // One automatic retry only when the first response was incomplete/unparseable.
+  // Give structured JSON more room and reduce reasoning tokens on the retry.
+  const retryBudget = Math.min(Math.max(Math.ceil(maxOutputTokens * 1.6), maxOutputTokens + 3000), 28000);
+  const retryEffort = effort === 'high' || effort === 'medium' ? 'low' : effort;
+  console.warn(`[ai:${schemaName}] retrying with max_output_tokens=${retryBudget}, effort=${retryEffort}`);
+  parsed = await runAttempt(2, retryBudget, retryEffort);
+  if (parsed) return parsed;
+
+  throw new Error('점사 결과 JSON이 완성되지 않았습니다. 잠시 후 다시 시도해주세요.');
 }
 
 function buildSpouseImagePrompt(fortune, input) {
